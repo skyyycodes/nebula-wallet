@@ -43,22 +43,22 @@ export function useTerminal() {
 
                 case COMMAND_WRITER.NEBULA_BUILD:
                     addLog({ type: 'client', text: CommandResponse[cmd] });
-                    sendSocketMessage(COMMAND.NEBULA_BUILD, cmd);
+                    sendSocketMessage(COMMAND.WINTERFELL_BUILD, cmd);
                     return;
 
                 case COMMAND_WRITER.NEBULA_TEST:
                     addLog({ type: 'client', text: CommandResponse[cmd] });
-                    sendSocketMessage(COMMAND.NEBULA_TEST, cmd);
+                    sendSocketMessage(COMMAND.WINTERFELL_TEST, cmd);
                     return;
 
                 case COMMAND_WRITER.NEBULA_DEPLOY_DEVNET:
                     addLog({ type: 'client', text: CommandResponse[cmd] });
-                    sendSocketMessage(COMMAND.NEBULA_DEPLOY_DEVNET, cmd);
+                    sendSocketMessage(COMMAND.WINTERFELL_DEPLOY_DEVNET, cmd);
                     return;
 
                 case COMMAND_WRITER.NEBULA_DEPLOY_MAINNET:
                     addLog({ type: 'client', text: CommandResponse[cmd] });
-                    sendSocketMessage(COMMAND.NEBULA_DEPLOY_MAINNET, cmd);
+                    sendSocketMessage(COMMAND.WINTERFELL_DEPLOY_MAINNET, cmd);
                     return;
 
                 default:
