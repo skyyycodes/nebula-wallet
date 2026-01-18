@@ -6,7 +6,6 @@ import WhoWeAre from '@/src/components/base/WhoWeAre';
 import LenisProvider from '@/src/providers/LenisProvider';
 import Navbar from '@/src/components/nav/Navbar';
 import Faq from '@/src/components/base/Faq';
-import ReviewsSection from '@/src/components/utility/ReviewsSection';
 import { useRef } from 'react';
 
 export default function Page() {
@@ -19,7 +18,6 @@ export default function Page() {
                 <Hero inputRef={inputRef} />
                 <Features />
                 <WhoWeAre />
-                <ReviewsSection />
                 <Faq />
                 <Footer />
             </div>

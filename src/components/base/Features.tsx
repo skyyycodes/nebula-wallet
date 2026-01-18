@@ -2,14 +2,28 @@
 import React from 'react';
 import { motion, useScroll, useTransform, MotionValue, AnimatePresence } from 'framer-motion';
 import { FaBolt, FaShieldAlt } from 'react-icons/fa';
-import { FaRust } from 'react-icons/fa6';
 import { TbAnchor } from 'react-icons/tb';
 import { Highlighter } from '@/src/components/ui/highlighter';
 import { cn } from '@/src/lib/utils';
 
 const NebulaLogo = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src="/nebula_purple.png" alt="Nebula" className={className} style={style} />
+    <img
+        src="/nebula_purple.png"
+        alt="Nebula"
+        className={cn('size-5 sm:size-[1.875rem] md:size-12', className)}
+        style={style}
+    />
+);
+
+const X402Logo = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+        src="/x402.png"
+        alt="x402"
+        className={cn('size-5 sm:size-[1.875rem] md:size-12', className)}
+        style={style}
+    />
 );
 
 const featureData = [
@@ -18,7 +32,7 @@ const featureData = [
         centerTitle: 'Smart x402 Payments',
         bottomTitle: 'Agents & Bots',
         description: 'Let humans and AI agents trigger Stellar x402 payments safely from Nebula.',
-        icon: FaRust,
+        icon: X402Logo,
         color: '#CE422B',
         gradient: 'from-red-500/20 to-orange-500/20',
     },

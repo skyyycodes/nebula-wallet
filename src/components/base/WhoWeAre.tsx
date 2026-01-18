@@ -7,22 +7,22 @@ import DonutComponent from '../ui/DonutComponent';
 
 const productMetaOptions = [
     {
-        title: 'CodeGenie',
-        subtitle: 'Magic contract creation',
+        title: 'Nebula Core',
+        subtitle: 'x402-native Stellar wallet engine',
         description:
-            'CodeGenie lets you write full Solana smart contracts using plain English. It automatically generates complete Anchor programs with all instructions, accounts, and serialization logic, saving you hours of manual coding while ensuring correctness and adherence to Solana best practices.',
+            'Nebula Core handles your Stellar accounts, signing, and x402 payment flows. It understands HTTP 402 challenges, builds the right Stellar transactions, and settles in XLM or stablecoins while keeping the UX simple for humans and AI agents.',
     },
     {
-        title: 'EditWizard',
-        subtitle: 'Instant tweaks',
+        title: 'Quantum Layer',
+        subtitle: 'Post‑quantum signing & durable receipts',
         description:
-            'EditWizard allows you to easily modify existing smart contracts through chat or direct code edits. It intelligently maintains Anchor conventions, syntax, and safety checks, while applying your requested changes so you can improve or refactor programs confidently and quickly.',
+            'The Quantum Layer dual‑signs every critical transaction with both classic Ed25519 and post‑quantum cryptography. It anchors compact receipts on Soroban, giving you verifiable payment proofs that stay secure even in a post‑quantum world.',
     },
     {
-        title: 'DeployBot',
-        subtitle: 'One-click launch',
+        title: 'Agent Control Plane',
+        subtitle: 'Budgets, policies, and endpoint controls',
         description:
-            'DeployBot simplifies deploying and interacting with your Solana programs. With a single click, it compiles, deploys, and generates IDLs and client SDKs, letting you instantly test and interact with your program without leaving the platform or writing extra scripts.',
+            'The Agent Control Plane lets you fund AI agents without losing control. Define per‑agent budgets, daily caps, and domain whitelists so Nebula can approve x402 payments automatically while enforcing your safety rules in real time.',
     },
 ];
 
