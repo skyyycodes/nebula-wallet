@@ -9,6 +9,7 @@ A quantum-safe Stellar wallet Chrome extension using SPHINCS+ post-quantum signa
 ## Project Description
 
 **Quantum Stellar Wallet** is a next-generation Stellar wallet that achieves true quantum resistance. It leverages SPHINCS+ (NIST-approved post-quantum signature scheme), ZK-SNARKs for privacy and proof, and a Soroban smart contract as the only authorized signer. Even if quantum computers break Ed25519, funds remain secure.
+<img width="553" height="507" alt="image" src="https://github.com/user-attachments/assets/b471de82-789c-48f0-b9fe-7b656665c3e0" />
 
 ---
 
@@ -44,6 +45,7 @@ This project demonstrates a wallet where:
 - **Full Test Suite:** End-to-end quantum-safe flow
 
 ---
+<img width="1076" height="501" alt="image" src="https://github.com/user-attachments/assets/7cabdb81-160e-4482-95ea-6b8275e9cfcc" />
 
 ## Architecture Overview
 
