@@ -1,0 +1,16 @@
+{
+  "name": "quantum-stellar-verifier",
+  "version": "1.0.0",
+  "description": "Verifier backend for Quantum Stellar Wallet - verifies SPHINCS+ signatures and submits preAuthTx",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "@stellar/stellar-sdk": "^12.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  }
+}

@@ -1,0 +1,1 @@
+const test = async () => { console.log("Testing tokens..."); const r = await fetch("https://api.stellar.expert/explorer/public/asset/XLM"); const d = await r.json(); console.log("XLM Price: $" + d.price); console.log("SUCCESS!"); }; test();

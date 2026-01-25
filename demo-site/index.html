@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quantum Stellar Demo</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <span class="logo-icon">⚛</span>
+        <h1>Quantum Stellar Demo</h1>
+      </div>
+      <p class="tagline">Post-Quantum Secure Stellar Payments</p>
+    </header>
+
+    <main>
+      <!-- Connection Status -->
+      <section class="card" id="connectionCard">
+        <h2>Wallet Connection</h2>
+        <div id="notConnected">
+          <p class="description">Connect your Quantum Stellar Wallet to send XLM securely using post-quantum cryptography.</p>
+          <button id="connectBtn" class="btn btn-primary btn-large">
+            <span class="btn-icon">🔗</span>
+            Connect Quantum Wallet
+          </button>
+        </div>
+        <div id="connected" class="hidden">
+          <div class="wallet-info">
+            <div class="info-row">
+              <span class="label">Status</span>
+              <span class="status-connected">
+                <span class="status-dot"></span>
+                Connected
+              </span>
+            </div>
+            <div class="info-row">
+              <span class="label">Address</span>
+              <span id="walletAddress" class="address">-</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Balance</span>
+              <span id="walletBalance" class="balance">-</span>
+            </div>
+          </div>
+          <button id="refreshBalanceBtn" class="btn btn-secondary">
+            Refresh Balance
+          </button>
+        </div>
+      </section>
+
+      <!-- Send XLM -->
+      <section class="card" id="sendCard">
+        <h2>Send XLM</h2>
+        <p class="description">Send XLM using quantum-safe SPHINCS+ signatures. Transactions are verified by the quantum verifier and submitted via preAuthTx.</p>
+
+        <form id="sendForm">
+          <div class="form-group">
+            <label for="destinationAddress">Destination Address</label>
+            <input
+              type="text"
+              id="destinationAddress"
+              placeholder="GXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+              required
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="amount">Amount (XLM)</label>
+            <input
+              type="number"
+              id="amount"
+              placeholder="10"
+              step="0.0000001"
+              min="0.0000001"
+              required
+            >
+          </div>
+
+          <button type="submit" id="sendBtn" class="btn btn-primary btn-large" disabled>
+            <span class="btn-icon">📤</span>
+            Send XLM
+          </button>
+        </form>
+      </section>
+
+      <!-- Transaction Status -->
+      <section class="card" id="statusCard">
+        <h2>Transaction Status</h2>
+        <div id="noTransaction" class="status-placeholder">
+          <p>No recent transactions</p>
+        </div>
+        <div id="transactionStatus" class="hidden">
+          <div class="transaction-result" id="transactionResult">
+            <!-- Populated by JavaScript -->
+          </div>
+        </div>
+      </section>
+
+      <!-- How It Works -->
+      <section class="card info-card">
+        <h2>How Quantum-Safe Payments Work</h2>
+        <div class="flow-diagram">
+          <div class="flow-step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <h4>Build Transaction</h4>
+              <p>Transaction built locally with timebounds</p>
+            </div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <h4>SPHINCS+ Sign</h4>
+              <p>Hash signed with post-quantum SPHINCS+</p>
+            </div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <h4>Verify & Submit</h4>
+              <p>Verifier adds preAuthTx and submits</p>
+            </div>
+          </div>
+        </div>
+        <div class="security-note">
+          <strong>Why is this quantum-safe?</strong>
+          <p>The Stellar account's Ed25519 key has masterWeight=0, meaning it can never authorize transactions. Only preAuthTx (added after SPHINCS+ verification) can move funds. Even if quantum computers break Ed25519, attackers cannot drain the wallet.</p>
+        </div>
+      </section>
+
+      <!-- X402 Demo Section -->
+      <section class="card" id="x402Card">
+        <h2>⚡ X402 Paid API Demo</h2>
+        <p class="description">Test the X402 protocol - pay-per-request API calls using your spending account.</p>
+        
+        <div class="x402-demo">
+          <div class="api-endpoint">
+            <span class="method">GET</span>
+            <span class="url">/api/premium/data</span>
+            <span class="price">0.1 XLM</span>
+          </div>
+          
+          <button id="x402DemoBtn" class="btn btn-primary btn-large">
+            <span class="btn-icon">💳</span>
+            Call Paid API
+          </button>
+          
+          <div id="x402Status" class="x402-status hidden">
+            <div class="x402-result" id="x402Result"></div>
+          </div>
+        </div>
+        
+        <div class="x402-info">
+          <h4>How X402 Works:</h4>
+          <ol>
+            <li>Request hits a paid endpoint → Server returns 402 with payment requirements</li>
+            <li>Wallet signs payment with spending account (Ed25519)</li>
+            <li>Request retries with X-PAYMENT header</li>
+            <li>Server verifies payment via facilitator and returns content</li>
+          </ol>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>Stellar Testnet Only | Hackathon Demo</p>
+      <p class="footer-links">
+        <a href="https://stellar.org" target="_blank">Stellar</a> •
+        <a href="https://horizon-testnet.stellar.org" target="_blank">Horizon Testnet</a>
+      </p>
+    </footer>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+Quantum Verifier Contract - Testnet Deployment
+
+Contract Address: CAQNMNI57UZ44RV7K2T4INETCEES4W77XB3CT22Y2G6SH3SFFLPULDQW
+WASM Hash: ecfa93453c91b8cfad02d5e042f47163140d45b6c22d76b4406667a4c9617698
+Deployed By: quantum-deployer
+Network: testnet
+Deployment Date: 2026-01-25
+
+Transaction Links:
+- Deploy TX: https://stellar.expert/explorer/testnet/tx/98e2826ac36e3b64925969fdee565f79b1c11c7625e59ee7eb72c57f507c06d9
+- Contract Explorer: https://lab.stellar.org/r/testnet/contract/CAQNMNI57UZ44RV7K2T4INETCEES4W77XB3CT22Y2G6SH3SFFLPULDQW
+
+Contract Functions:
+- initialize(admin, wallet_address)
+- lock_wallet(master_weight, signer_weight, thresholds)
+- add_contract_signer(contract_weight)
+- init_zk(zk_admin)
+- set_zk_verification_key(vk_bytes)
+- verify_zk_and_authorize(proof, public_inputs, operation_hash, wallet, nonce)
+- is_zk_enabled()
+- get_zk_admin()
+
+Note: This contract implements quantum-safe wallet authorization using SPHINCS+ signatures verified via ZK-SNARKs (Groth16).
+Once BLS12-381 host functions are available in Soroban, the full ZK verification will be enabled.
