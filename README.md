@@ -73,16 +73,13 @@ Stellar Network
 
 ---
 
-## Screenshots
-
-*(Add screenshots of your extension, demo site, and contract explorer here)*
-
----
-
 ## Deployed Link
 
-- **Demo Website:**  
-  *(Add your deployed link if available, or instructions to run locally)*
+- **how to run locally:**  
+  1. **Build and load the extension** (`extension/`)
+2. **Start the verifier backend** (`relayer/`)
+3. **Serve the demo website** (`demo-site/`)
+4. **Follow the test guide** (`EXTENSION_TEST_GUIDE.md`)
 
 ---
 
