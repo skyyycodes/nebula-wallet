@@ -1,49 +1,42 @@
 import './globals.css';
 import type { Metadata } from 'next';
-import { getServerSession } from 'next-auth';
-import { authOption } from './api/auth/[...nextauth]/options';
-import SessionSetter from '@/src/lib/SessionSeter';
-import WalletProviders from '@/src/providers/WalletProviders';
 import { Toaster } from 'sonner';
 
 export const metadata: Metadata = {
-    title: 'Nebula',
+    title: 'Nebula Wallet',
     description:
-        'Nebula is an AI-powered platform for building and deploying Solana smart contracts with Anchor, end-to-end.',
+        'Nebula is a quantum-safe Stellar wallet with x402 payments and post-quantum cryptography.',
     metadataBase: new URL('https://nebula.dev'),
     openGraph: {
-        title: 'Nebula',
+        title: 'Nebula Wallet',
         description:
-            'Nebula is an AI-powered platform for building and deploying Solana smart contracts with Anchor, end-to-end.',
+            'Nebula is a quantum-safe Stellar wallet with x402 payments and post-quantum cryptography.',
         url: 'https://nebula.dev',
-        siteName: 'Nebula',
+        siteName: 'Nebula Wallet',
         images: [
             {
                 url: '/images/nebula-dashboard.png',
                 width: 1200,
                 height: 630,
-                alt: 'Nebula Preview',
+                alt: 'Nebula Wallet Preview',
             },
         ],
         type: 'website',
     },
-
     twitter: {
         card: 'summary_large_image',
-        title: 'Nebula | Smart Contract Generator',
+        title: 'Nebula Wallet | Quantum-Safe Stellar Wallet',
         description:
-            'Nebula is an AI-powered platform for building and deploying Solana smart contracts with Anchor, end-to-end.',
+            'Nebula is a quantum-safe Stellar wallet with x402 payments and post-quantum cryptography.',
         images: ['/images/nebula-dashboard.png'],
     },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
     children,
 }: Readonly<{
     children: React.ReactNode;
 }>) {
-    const session = await getServerSession(authOption);
-
     return (
         <html lang="en">
             <body className={`antialiased bg-darkest`} suppressHydrationWarning>
@@ -67,8 +60,7 @@ export default async function RootLayout({
                         },
                     }}
                 />
-                <WalletProviders>{children}</WalletProviders>
-                <SessionSetter session={session} />
+                {children}
             </body>
         </html>
     );

@@ -6,8 +6,8 @@ import City from './City';
 import ActionTickers from '../tickers/ActionTickers';
 import DashboardTextAreaComponent from './DashboardTextAreaComponent';
 import HighlighterTicker from '../tickers/HighlighterTicker';
-import { useTemplateStore } from '@/src/store/user/useTemplateStore';
-import Marketplace from '@/src/lib/server/marketplace-server';
+
+const DOWNLOAD_URL = 'https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fskyyycodes%2Fnebula-wallet%2Ftree%2Fmaster%2Fextension%2Fdist';
 
 interface HeroProps {
     inputRef: ForwardedRef<HTMLTextAreaElement>;
@@ -17,16 +17,7 @@ export default function Hero({ inputRef }: HeroProps) {
     const heroRef = useRef<HTMLDivElement>(null);
     const isInView = useInView(heroRef, { once: true });
     const controls = useAnimation();
-    const { setTemplates } = useTemplateStore();
 
-    useEffect(() => {
-        const get_templates = async () => {
-            const response = await Marketplace.getTemplates();
-            setTemplates(response);
-        };
-        get_templates();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
     useEffect(() => {
         if (isInView) {
             controls.start('visible');
@@ -64,7 +55,7 @@ export default function Hero({ inputRef }: HeroProps) {
                         className="mb-3"
                     >
                         <h1 className="text-[28px] md:text-[60px] font-bold leading-tight bg-gradient-to-t flex flex-col from-neutral-700 via-neutral-300 to-neutral-200 bg-clip-text text-transparent w-max">
-                            <span>Quantum‑Safe Payments</span>
+                            <span>Quantum-Safe Payments</span>
                             <span>in Seconds, Not Sprints</span>
                         </h1>
                     </motion.div>
@@ -79,9 +70,11 @@ export default function Hero({ inputRef }: HeroProps) {
                         <p className="m-0 p-0">Powered by Soroban, x402</p>
                         <p className="m-0 p-0">&amp; Post-Quantum Crypto</p>
                         <div className="flex items-end justify-center gap-x-2 md:gap-x-3 mt-2">
-                            <Button className="font-semibold text-xs md:text-base !px-4 md:!px-6 rounded-[4px]">
-                                Download Chrome Extension
-                            </Button>
+                            <a href={DOWNLOAD_URL} target="_blank" rel="noopener noreferrer">
+                                <Button className="font-semibold text-xs md:text-base !px-4 md:!px-6 rounded-[4px]">
+                                    Download Chrome Extension
+                                </Button>
+                            </a>
                         </div>
                     </div>
                 </div>

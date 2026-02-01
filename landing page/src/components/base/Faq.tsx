@@ -7,6 +7,8 @@ import { motion, useInView } from 'framer-motion';
 import { Button } from '../ui/button';
 import { FaGithub } from 'react-icons/fa';
 
+const GITHUB_URL = 'https://github.com/skyyycodes/nebula-wallet';
+
 /* eslint-disable react/prop-types */
 interface FaqData {
     question: string;
@@ -32,7 +34,7 @@ const FaqItem = memo<FaqItemProps>(({ faq, index, isOpen, onToggle }) => {
             transition={{ duration: 0.5, delay: index * 0.1 }}
             className={cn(
                 'overflow-hidden transition-all duration-300',
-                index <= 5 ? 'border-b border-neutral-300' : '',
+                index <= 6 ? 'border-b border-neutral-300' : '',
             )}
         >
             <div
@@ -68,32 +70,36 @@ export default function Faq() {
 
     const faqs: FaqData[] = [
         {
-            question: 'What is Nebula?',
-            answer: 'Nebula is an AI-powered platform for building, editing, deploying, and interacting with Rust-based smart contracts on Solana using Anchor. It simplifies the entire smart contract workflow from generation to frontend integration.',
+            question: 'What is Nebula Wallet?',
+            answer: 'Nebula Wallet is a quantum-safe Chrome extension wallet for the Stellar blockchain. It combines post-quantum cryptography (SPHINCS+), zero-knowledge proofs, and x402 payment protocol to provide future-proof security against quantum computer attacks while enabling instant micropayments and AI agent automation.',
         },
         {
-            question: 'Do I need to know Rust to use this platform?',
-            answer: 'No! Our AI can generate Anchor contracts from natural language descriptions. However, understanding Rust and Solana concepts will help you customize and optimize your contracts more effectively.',
+            question: 'What makes Nebula "quantum-safe"?',
+            answer: 'Traditional wallets use Ed25519 signatures which are vulnerable to quantum computers running Shor\'s algorithm. Nebula disables your Ed25519 key entirely and instead uses SPHINCS+ (a NIST-approved post-quantum signature scheme) combined with ZK-SNARKs to authorize transactions through a smart contract. This means even if quantum computers break Ed25519, your funds remain secure.',
         },
         {
-            question: 'What types of contracts can I build?',
-            answer: 'You can build various Solana programs including token contracts, NFT contracts, DeFi programs, escrow systems, and payment programs. We provide templates for common use cases and support custom contract generation.',
+            question: 'What is x402 and why does it matter?',
+            answer: 'x402 refers to HTTP 402 "Payment Required" - a web standard for micropayments. Nebula natively supports x402, enabling one-click paywalls, API metering, premium content access, and AI service payments. Instead of subscriptions, you pay only for what you use, with instant settlement on Stellar.',
         },
         {
-            question: 'Can I deploy to mainnet?',
-            answer: 'Yes! Nebula supports one-click deployment to Solana Devnet, Testnet, and Mainnet. We also provide CLI commands and track deployed program IDs for easy management.',
+            question: 'How does the AI Agent Builder work?',
+            answer: 'The Agent Builder is a visual drag-and-drop workflow designer that lets you automate trading and payments without coding. You can create triggers (price thresholds, time-based), set conditions, and execute actions (swaps, transfers). Agents have built-in spending limits and domain whitelisting for security.',
         },
         {
-            question: 'Does it generate client code for my contract?',
-            answer: 'Absolutely! The platform automatically generates TypeScript/JavaScript client SDKs with typed functions for each instruction, wallet integration, and helper functions for PDAs and transactions.',
+            question: 'What blockchain does Nebula use?',
+            answer: 'Nebula is built on Stellar and Soroban (Stellar\'s smart contract platform). We chose Stellar for its fast finality (3-5 seconds), low fees, and built-in DEX. The quantum-safe verification happens through a Soroban smart contract that validates ZK proofs of your SPHINCS+ signatures.',
         },
         {
-            question: 'What about security?',
-            answer: 'Our AI assistant warns about known vulnerabilities like unchecked seeds and missing payer checks. We also provide an AI-powered security checklist covering seeds, admin restrictions, and rent exemption checks.',
+            question: 'Is my private key safe?',
+            answer: 'Yes, and here\'s why: Your original Ed25519 key is permanently disabled (masterWeight=0) so it cannot sign transactions. Your SPHINCS+ key signs locally, and a ZK proof is generated to verify the signature without revealing it. The relayer only pays gas fees and never has custody of your funds. There\'s no private key that can be stolen to drain your wallet.',
         },
         {
-            question: 'How do I test my contracts?',
-            answer: 'The platform auto-generates Anchor test scripts and allows you to simulate transactions in-browser or on devnet before deployment. You can also test frontend integrations with our interactive sandbox.',
+            question: 'Can I swap tokens with Nebula?',
+            answer: 'Yes! Nebula includes a built-in DEX aggregator that fetches quotes from multiple sources including Stellar\'s native SDEX orderbook. It finds the best route, calculates price impact, handles slippage, and automatically creates trustlines for new assets. You can swap any Stellar token with just a few clicks.',
+        },
+        {
+            question: 'How do I get started?',
+            answer: 'Download the Chrome extension from our GitHub repository, create a new wallet or import an existing Stellar account, and you\'re ready to go. For quantum-safe mode, you\'ll need to register your SPHINCS+ public key with our verification contract. Check out the README for detailed setup instructions.',
         },
     ];
 
@@ -133,12 +139,7 @@ export default function Faq() {
                                 <span>Help us improve — open it on GitHub.</span>
                                 <div className="flex items-end justify-center gap-x-2 md:gap-x-3 mt-2">
                                     <Button
-                                        onClick={() =>
-                                            window.open(
-                                                'https://github.com/bottle-nex/nebula',
-                                                '_blank',
-                                            )
-                                        }
+                                        onClick={() => window.open(GITHUB_URL, '_blank')}
                                         className="font-semibold text-xs md:text-base !px-4 md:!px-6 rounded-[4px]"
                                     >
                                         <FaGithub className="mr-2" />
