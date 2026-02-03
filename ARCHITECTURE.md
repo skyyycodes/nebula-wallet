@@ -13,11 +13,6 @@
 1. [System Overview](#1-system-overview)
 2. [Architecture Diagram](#2-architecture-diagram)
 3. [Component Deep Dive](#3-component-deep-dive)
-   - [Chrome Extension](#31-chrome-extension)
-   - [Relayer Service](#32-relayer-service)
-   - [Soroban Smart Contract](#33-soroban-smart-contract)
-   - [ZK Circuits](#34-zk-circuits)
-   - [Demo Site](#35-demo-site)
 4. [Cryptographic Foundations](#4-cryptographic-foundations)
 5. [Transaction Flows](#5-transaction-flows)
 6. [Security Model](#6-security-model)
@@ -29,7 +24,22 @@
 
 ## 1. System Overview
 
-Nebula Wallet implements a **quantum-resistant authorization system** for Stellar blockchain. The core innovation is replacing vulnerable Ed25519 signatures with:
+### The Quantum Threat
+
+Current blockchain wallets, including those on Stellar, rely on Ed25519 digital signatures. While secure against classical computers, Ed25519 is vulnerable to quantum computers running Shor's algorithm. When large-scale quantum computers become available (estimated within 10-15 years), they could derive private keys from public keys, allowing attackers to drain any wallet whose public key has been exposed on-chain.
+
+This isn't a theoretical concern—every transaction you make today reveals your public key, creating a permanent record that future quantum computers could exploit. Even if you move funds later, historical transactions remain vulnerable.
+
+### Our Solution
+
+Nebula Wallet addresses this threat by completely replacing the vulnerable Ed25519 signing mechanism with a quantum-resistant alternative. Instead of using Ed25519 keys to authorize transactions, we:
+
+1. **Disable Ed25519 entirely** by setting the account's master weight to zero
+2. **Use SPHINCS+** (a NIST-approved post-quantum signature scheme) for user authentication
+3. **Compress the large signatures** (~17KB) into tiny ZK proofs (192 bytes) using Groth16 ZK-SNARKs
+4. **Verify proofs on-chain** via a Soroban smart contract that acts as the account's sole authorized signer
+
+The result is a wallet where the authorization path contains no quantum-vulnerable cryptography. Even if an attacker gains access to a quantum computer, they cannot forge the SPHINCS+ signatures required to move funds.
 
 | Component | Technology | Purpose |
 |-----------|------------|---------|
@@ -38,25 +48,21 @@ Nebula Wallet implements a **quantum-resistant authorization system** for Stella
 | **Verification** | BLS12-381 Pairing | On-chain proof verification |
 | **Authorization** | Soroban Contract | Contract acts as account signer |
 
-### Key Innovation
+### Why This Approach?
 
-Traditional Stellar wallets use Ed25519 (quantum-vulnerable):
-```
-User Ed25519 Key → Sign Transaction → Submit to Network
-        ↑
-   Quantum Attack Vector
-```
+We chose this architecture for several reasons:
 
-Nebula Wallet eliminates this attack surface:
-```
-User SPHINCS+ Key → ZK Proof → Contract Verification → Authorization
-        ↑                              ↑
-   Quantum-Safe                   No Private Key
-```
+- **SPHINCS+** is the most conservative choice among NIST's post-quantum standards. Unlike lattice-based schemes, its security relies only on hash function properties, which are well-understood and quantum-resistant.
+
+- **ZK-SNARKs** solve the practical problem of SPHINCS+'s large signature size. A 17KB signature would be expensive to store and verify on-chain, but a 192-byte proof is comparable to traditional signatures.
+
+- **Contract-as-signer** eliminates the need for any private key in the authorization chain. The contract verifies proofs and provides authorization—there's no key that can be stolen or broken.
 
 ---
 
 ## 2. Architecture Diagram
+
+The system consists of four main components that work together to enable quantum-safe transactions. Here's how data flows through the system:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -93,11 +99,6 @@ User SPHINCS+ Key → ZK Proof → Contract Verification → Authorization
 │  │    Express API     │  │   Groth16 Proofs   │  │ Signature Verify   │    │
 │  │    Endpoints       │  │   snarkjs          │  │ FORS + Hypertree   │    │
 │  └────────────────────┘  └────────────────────┘  └────────────────────┘    │
-│                                                                              │
-│  Endpoints:                                                                  │
-│  • POST /api/verify-and-submit     (Simplified SPHINCS+ verification)       │
-│  • POST /api/zk/generate-proof     (Full ZK proof generation: 30-120s)      │
-│  • POST /api/zk/submit             (Submit with ZK authorization)           │
 └─────────────────────────────────────────────────────────────────────────────┘
                                       │
                                       │ ZK Proof (192 bytes)
@@ -111,18 +112,11 @@ User SPHINCS+ Key → ZK Proof → Contract Verification → Authorization
 │  ┌────────────────────┐  ┌────────────────────┐  ┌────────────────────┐    │
 │  │     lib.rs         │  │    groth16.rs      │  │    sphincs.rs      │    │
 │  │  Contract Logic    │  │  ZK Verification   │  │  SPHINCS+ Verify   │    │
-│  │  Registration      │  │  BLS12-381 Pairing │  │  FORS + WOTS+      │    │
-│  │  Authorization     │  │  192-byte proofs   │  │  (On-chain backup) │    │
+│  │  Registration      │  │  BLS12-381 Pairing │  │  (On-chain backup) │    │
 │  └────────────────────┘  └────────────────────┘  └────────────────────┘    │
-│                                                                              │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                         shake256.rs                                  │   │
-│  │              Keccak-f[1600] Permutation (24 rounds)                 │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────────────┘
                                       │
                                       │ Contract Authorization
-                                      │ (sha256Hash preimage)
                                       ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                          STELLAR NETWORK                                     │
@@ -133,6 +127,20 @@ User SPHINCS+ Key → ZK Proof → Contract Verification → Authorization
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
+### Data Flow Explained
+
+**Step 1: User Initiates Transaction**
+When a user wants to send funds, the Chrome extension builds a standard Stellar transaction. However, instead of signing it with Ed25519, the extension signs the transaction hash using the user's SPHINCS+ private key, producing a ~17KB signature.
+
+**Step 2: Relayer Processes the Signature**
+The extension sends the transaction and signature to our relayer service. The relayer has two jobs: first, it verifies the SPHINCS+ signature is valid (ensuring the user actually authorized this transaction). Second, it generates a ZK proof—a cryptographic certificate that says "I verified a valid SPHINCS+ signature for this transaction" without revealing the actual signature.
+
+**Step 3: Contract Verifies and Authorizes**
+The ZK proof (just 192 bytes) is submitted to our Soroban smart contract. The contract verifies the proof using elliptic curve pairings. If valid, the contract provides its authorization for the transaction. Since the user's account was configured to require this contract's approval (and the Ed25519 key was disabled), the transaction can now execute.
+
+**Step 4: Transaction Executes**
+The Stellar network sees a properly authorized transaction and executes it. The key insight is that no quantum-vulnerable cryptography was used in the authorization chain—only SPHINCS+ (quantum-safe) and ZK proofs (information-theoretically secure).
+
 ---
 
 ## 3. Component Deep Dive
@@ -141,7 +149,17 @@ User SPHINCS+ Key → ZK Proof → Contract Verification → Authorization
 
 **Location:** `extension/`
 
-The extension is a Manifest V3 Chrome extension providing the wallet UI and cryptographic operations.
+The Chrome extension is the user-facing component of Nebula Wallet. It manages keys, builds transactions, and provides the UI for all wallet operations. Built as a Manifest V3 extension, it runs entirely in the user's browser—private keys never leave the device.
+
+#### What It Does
+
+The extension serves three primary functions:
+
+1. **Key Management**: Generates and stores both Stellar Ed25519 keys (for account creation) and SPHINCS+ keys (for quantum-safe signing). Keys are stored encrypted in Chrome's local storage.
+
+2. **Transaction Building**: Constructs Stellar transactions for payments, swaps, and other operations. It integrates with the Stellar SDK to handle all the complexity of Stellar's transaction format.
+
+3. **SPHINCS+ Signing**: When a transaction needs to be sent, the extension signs the transaction hash with the user's SPHINCS+ private key. This is the core security operation—it proves the user authorized the transaction.
 
 #### Directory Structure
 
@@ -155,34 +173,25 @@ extension/
 │   ├── background.ts       # Service worker (message routing)
 │   ├── content.ts          # Content script (website bridge)
 │   ├── injected.ts         # Injected provider (window.quantumStellar)
-│   ├── types.ts            # TypeScript interfaces
-│   ├── popup/              # React UI components
-│   │   ├── App.tsx         # Main container
-│   │   ├── views/          # Page components
-│   │   └── hooks/          # React hooks
-│   └── modules/
-│       ├── wallet/         # Key management
-│       ├── dex/            # DEX aggregator
-│       ├── execution/      # Payment executor
-│       └── network/        # Network management
+│   └── popup/              # React UI components
 ├── public/
 │   └── manifest.json       # Extension manifest
 └── webpack.config.js       # Build configuration
 ```
 
-#### SPHINCS+ Implementation (`sphincs.ts`)
+#### SPHINCS+ Implementation
 
-**Parameters (SPHINCS+-SHAKE-128f-simple):**
+Our SPHINCS+ implementation follows the NIST FIPS 205 specification for the SHAKE-128f-simple variant. This variant prioritizes signing speed over signature size—important for good user experience, even though the signatures are large.
+
+**Key Parameters:**
 
 | Parameter | Value | Description |
 |-----------|-------|-------------|
 | N | 16 | Hash output length (bytes) |
 | W | 16 | Winternitz parameter |
-| TREE_HEIGHT | 60 | Total tree height |
-| D | 20 | Hypertree depth |
-| HP | 3 | Per-layer height |
-| A | 9 | FORS height |
-| K | 30 | FORS trees |
+| TREE_HEIGHT | 60 | Total tree height (supports 2^60 signatures) |
+| D | 20 | Hypertree depth (20 layers of subtrees) |
+| K | 30 | FORS trees (for few-time signatures) |
 | PK_SIZE | 32 | Public key bytes |
 | SK_SIZE | 64 | Secret key bytes |
 | SIG_SIZE | ~17,088 | Signature bytes |
@@ -190,60 +199,26 @@ extension/
 **Key Functions:**
 
 ```typescript
-// Key generation
+// Generate a new SPHINCS+ keypair
 generateKeyPair(): { publicKey: Uint8Array, secretKey: Uint8Array }
-  // publicKey = [pkSeed(16) || pkRoot(16)]
-  // secretKey = [skSeed(16) || skPrf(16) || pkSeed(16) || pkRoot(16)]
 
-// Signing
+// Sign a message (transaction hash)
 sign(message: Uint8Array, secretKey: Uint8Array): Uint8Array
-  // Returns: R(16) || FORS_SIG(4800) || HT_SIG(~12000)
-  // Total: ~17,088 bytes
+// Returns ~17KB signature
 
-// Verification (stub - relies on contract)
-verify(signature: Uint8Array, message: Uint8Array, publicKey: Uint8Array): boolean
+// Verification is delegated to the smart contract
+verify(signature, message, publicKey): boolean
 ```
 
-#### Message Types
+#### Account Locking
 
-The extension uses Chrome's message passing for communication:
+A critical feature is "account locking"—the one-time process that converts a regular Stellar account into a quantum-safe account. When locked:
 
-```typescript
-// Wallet Operations
-'CREATE_WALLET' | 'IMPORT_WALLET' | 'GET_WALLET' | 'LOCK_WALLET'
-'GET_BALANCE' | 'AIRDROP' | 'SWITCH_ACCOUNT' | 'DELETE_ACCOUNT'
+1. The Ed25519 master key weight is set to 0 (it can no longer sign)
+2. The smart contract is added as a signer with weight 1
+3. The user's SPHINCS+ public key is registered with the contract
 
-// Transactions
-'SEND_XLM' | 'SWAP_TOKENS' | 'ADD_TRUSTLINE'
-'EXECUTE_MULTI_SEND' | 'EXECUTE_MULTIWALLET_SEND'
-
-// X402 Micropayments
-'X402_SIGN_PAYMENT' | 'X402_GET_SPENDING_ACCOUNT'
-'X402_GET_SERVICES' | 'X402_UPDATE_SERVICE_POLICY'
-
-// Agents
-'START_AGENT' | 'STOP_AGENT' | 'GET_EXECUTION_LOGS'
-```
-
-#### Storage Schema
-
-```typescript
-interface WalletData {
-  id: string;                    // UUID
-  name: string;                  // User-given name
-  stellarPublicKey: string;      // G... address
-  stellarSecretKey: string;      // S... secret
-  sphincsPublicKey: string;      // Base64 encoded
-  sphincsSecretKey: string;      // Base64 encoded
-  isLocked: boolean;             // Quantum-safe mode
-  createdAt: number;
-}
-
-interface WalletStore {
-  accounts: WalletData[];
-  activeAccountId: string | null;
-}
-```
+After locking, the only way to authorize transactions is through the contract, which requires valid SPHINCS+ signatures.
 
 ---
 
@@ -251,7 +226,17 @@ interface WalletStore {
 
 **Location:** `relayer/`
 
-The relayer is a Node.js service that verifies SPHINCS+ signatures, generates ZK proofs, and submits transactions.
+The relayer is a Node.js service that bridges the gap between the user's browser and the blockchain. It performs computationally intensive operations that would be impractical to run in a browser or too expensive to run on-chain.
+
+#### Why We Need a Relayer
+
+Two operations in our system are too heavy for certain environments:
+
+1. **SPHINCS+ Verification**: Verifying a SPHINCS+ signature requires hashing through a tree of 2^60 possible leaves. While the verification itself is fast (~100ms), it's complex to implement correctly and would bloat the extension.
+
+2. **ZK Proof Generation**: Creating a Groth16 proof for our circuit takes 30-120 seconds and requires significant RAM. This must happen on a server, not in a browser.
+
+The relayer handles both operations. Importantly, the relayer cannot steal funds—it can only verify signatures and generate proofs. Without a valid SPHINCS+ signature from the user, the relayer is powerless.
 
 #### Directory Structure
 
@@ -259,110 +244,39 @@ The relayer is a Node.js service that verifies SPHINCS+ signatures, generates ZK
 relayer/
 ├── src/
 │   ├── api.ts                      # Express server & endpoints
-│   ├── zk-prover.ts               # ZK proof generation (snarkjs)
+│   ├── zk-prover.ts               # ZK proof generation
 │   ├── sphincs-verifier.ts        # Full SPHINCS+ verification
-│   ├── sphincs-simplified-verifier.ts  # FORS-only verification
+│   ├── sphincs-simplified-verifier.ts  # Fast FORS-only verification
 │   ├── transaction.ts             # Transaction building
-│   ├── event-watcher.ts           # Soroban event polling
-│   ├── config.ts                  # Environment configuration
-│   └── index.ts                   # Entry point
+│   └── config.ts                  # Environment configuration
 ├── zk-assets/                     # ZK proving artifacts
-│   ├── sphincs_main.wasm          # Circuit WASM
-│   ├── sphincs_main_final.zkey    # Proving key
+│   ├── sphincs_main.wasm          # Compiled circuit
+│   ├── sphincs_main_final.zkey    # Proving key (~50MB)
 │   └── verification_key.json      # Verification key
-├── api/
-│   └── index.ts                   # Vercel serverless entry
 └── package.json
 ```
 
 #### API Endpoints
 
-**POST `/api/verify-and-submit`** (Simplified Flow)
+The relayer exposes three main endpoints:
 
-```typescript
-// Request
-{
-  stellarAddress: string,      // Account address
-  txHash: string,              // Hex-encoded transaction hash
-  txXdr: string,               // Base64 transaction XDR
-  sphincsSignature: string     // Base64 SPHINCS+ signature
-}
+**`POST /api/verify-and-submit`** — The simplified flow for most transactions. The relayer verifies the SPHINCS+ signature using a fast FORS-only check, then submits the transaction with contract authorization. This is faster but relies on trust in the relayer.
 
-// Response
-{
-  success: boolean,
-  paymentTxHash: string,
-  message: string
-}
-```
+**`POST /api/zk/generate-proof`** — Generates a full ZK proof. Takes 30-120 seconds but creates cryptographic proof that can be verified by anyone, including the smart contract.
 
-**POST `/api/zk/generate-proof`** (Full ZK Flow)
+**`POST /api/zk/submit`** — Submits a transaction using ZK-verified authorization. The smart contract verifies the proof on-chain, providing the strongest security guarantees.
 
-```typescript
-// Request
-{
-  stellarAddress: string,
-  txHash: string,              // 32 bytes hex
-  sphincsPublicKey: string,    // 32 bytes hex
-  sphincsSignature: string     // Base64 (~17KB)
-}
+#### ZK Proof Generation
 
-// Response
-{
-  success: boolean,
-  proof: Groth16Proof,
-  publicSignals: string[],
-  proofHex: string,            // 192 bytes
-  publicInputsHex: string,     // 96 bytes
-  provingTimeSeconds: number   // 30-120 seconds
-}
-```
+The proof generation process transforms a ~17KB SPHINCS+ signature into a 192-byte ZK proof:
 
-**POST `/api/zk/submit`** (ZK Authorization)
+1. **Parse Signature**: Extract the randomness (R), FORS signature, and hypertree signature from the SPHINCS+ signature.
 
-```typescript
-// Request
-{
-  stellarAddress: string,
-  txHash: string,
-  txXdr: string,
-  proofHex: string,            // 192 bytes
-  publicInputsHex: string      // 96 bytes
-}
+2. **Prepare Inputs**: Convert signature components into the format expected by our Circom circuit. Public inputs include the transaction hash and public key; private inputs include the signature details.
 
-// Response
-{
-  success: boolean,
-  zkVerificationTxHash: string,
-  paymentTxHash: string,
-  quantumSafe: true
-}
-```
+3. **Generate Proof**: Run snarkjs with our compiled circuit and proving key. This is the slow step—it involves complex elliptic curve operations.
 
-#### ZK Proof Generation (`zk-prover.ts`)
-
-**Proof Generation Flow:**
-
-```
-1. Parse SPHINCS+ Signature
-   ├── Extract R (randomness): 16 bytes
-   ├── Extract FORS signature: 30 trees × 10 elements × 16 bytes
-   └── Extract Hypertree signature: ~12KB
-
-2. Compute Circuit Inputs
-   ├── Public: messageHash, pkSeed, pkRoot
-   └── Private: sigR, forsSecrets, forsAuthPaths, htSigCommitment
-
-3. Generate Groth16 Proof
-   └── snarkjs.groth16.fullProve(inputs, WASM, zkey)
-       └── Duration: 30-120 seconds
-
-4. Serialize Proof
-   ├── π_A: 48 bytes (G1 point)
-   ├── π_B: 96 bytes (G2 point)
-   └── π_C: 48 bytes (G1 point)
-   └── Total: 192 bytes
-```
+4. **Serialize**: Convert the proof to a compact 192-byte format for on-chain verification.
 
 ---
 
@@ -370,71 +284,44 @@ relayer/
 
 **Location:** `soroban-verifier/`
 
-The Rust smart contract provides on-chain verification and authorization.
+The smart contract is the trust anchor of our system. It's deployed on Stellar's Soroban platform and serves as the sole authorized signer for locked accounts. Written in Rust, it implements both SPHINCS+ verification (as a backup) and Groth16 ZK proof verification.
 
-#### Directory Structure
+#### Why a Smart Contract?
+
+The contract solves a fundamental problem: how do you authorize a transaction without using a private key that could be stolen or broken?
+
+Our answer: use a contract that has no private key. The contract verifies cryptographic proofs and, if valid, provides its authorization. Since the contract's authorization comes from code execution (not a private key), there's nothing for an attacker to steal.
+
+When a user locks their account, they configure Stellar to require the contract's approval. The contract will only approve transactions backed by valid SPHINCS+ signatures (proven via ZK proofs).
+
+#### Contract Structure
 
 ```
 soroban-verifier/
 ├── src/
-│   ├── lib.rs          # Main contract logic (635 lines)
-│   ├── groth16.rs      # Groth16 ZK verifier (378 lines)
-│   ├── sphincs.rs      # SPHINCS+ verifier (401 lines)
-│   └── shake256.rs     # SHAKE256/Keccak (140 lines)
-├── Cargo.toml
-└── deploy.sh
+│   ├── lib.rs          # Main contract logic
+│   ├── groth16.rs      # ZK proof verifier
+│   ├── sphincs.rs      # SPHINCS+ verifier (backup)
+│   └── shake256.rs     # SHAKE256 hash function
+└── Cargo.toml
 ```
 
-#### Contract Address
-
+**Contract Address (Testnet):**
 ```
-Testnet: CAQNMNI57UZ44RV7K2T4INETCEES4W77XB3CT22Y2G6SH3SFFLPULDQW
+CAQNMNI57UZ44RV7K2T4INETCEES4W77XB3CT22Y2G6SH3SFFLPULDQW
 ```
 
-#### Entry Points
+#### Key Functions
 
-**Registration:**
+**Registration**: Before using the wallet, users register their SPHINCS+ public key with the contract. This creates an on-chain binding between their Stellar address and quantum-safe identity.
 
 ```rust
 pub fn register(env: Env, stellar_address: Address, sphincs_public_key: Bytes)
-// Registers SPHINCS+ public key for an account
-
-pub fn is_registered(env: Env, stellar_address: Address) -> bool
-pub fn get_registration(env: Env, stellar_address: Address) -> Option<Registration>
 ```
 
-**Approval (Hybrid Model):**
+**ZK Verification**: The core security function. It verifies a Groth16 proof and, if valid, records an approval for the transaction.
 
 ```rust
-pub fn approve_transaction_lightweight(
-    env: Env,
-    stellar_address: Address,
-    tx_hash: BytesN<32>,
-    tx_xdr: Bytes,
-    sphincs_signature: Bytes,
-) -> u64
-// Lightweight: Trusts off-chain verification, returns nonce
-
-pub fn approve_transaction(/* same params */) -> u64
-// Full: Performs complete SPHINCS+ verification on-chain
-```
-
-**ZK Verification:**
-
-```rust
-pub fn init_zk(env: Env, admin: Address)
-// Initialize ZK system (one-time)
-
-pub fn set_zk_verification_key(
-    env: Env,
-    alpha_g1: BytesN<48>,
-    beta_g2: BytesN<96>,
-    gamma_g2: BytesN<96>,
-    delta_g2: BytesN<96>,
-    ic: Vec<BytesN<48>>,
-)
-// Set Groth16 verification key (admin only)
-
 pub fn verify_zk_and_authorize(
     env: Env,
     stellar_address: Address,
@@ -442,41 +329,30 @@ pub fn verify_zk_and_authorize(
     tx_xdr: Bytes,
     proof_bytes: Bytes,         // 192 bytes
     public_inputs_bytes: Bytes, // 96 bytes
-) -> u64
-// Verify ZK proof and authorize transaction
+) -> u64  // Returns approval nonce
 ```
 
-**Authorization:**
+**Authorization Preimage**: When Stellar checks if the contract authorizes a transaction, this function provides the necessary preimage.
 
 ```rust
 pub fn get_authorization_preimage(env: Env, tx_hash: BytesN<32>) -> Option<Bytes>
-// Returns contract address bytes for sha256Hash signer
-
-pub fn get_signer_hash(env: Env) -> BytesN<32>
-// Returns sha256(contract_address) for account setup
 ```
 
-#### Groth16 Verifier (`groth16.rs`)
+#### Groth16 Verifier
 
-**Verification Equation:**
+The contract includes a full implementation of Groth16 proof verification using BLS12-381 elliptic curve pairings. The verification equation is:
 
 ```
 e(π_A, π_B) = e(α, β) · e(L, γ) · e(π_C, δ)
-
-Where:
-- e: BLS12-381 optimal ate pairing
-- L = IC[0] + Σ(public_inputs[i] · IC[i+1])
 ```
 
-**Point Sizes:**
+Where:
+- `e` is the bilinear pairing function
+- `π_A, π_B, π_C` are the proof elements (192 bytes total)
+- `α, β, γ, δ` are from the verification key (set during trusted setup)
+- `L` is computed from the public inputs (transaction hash, public key)
 
-| Element | Compressed Size |
-|---------|----------------|
-| G1 point | 48 bytes |
-| G2 point | 96 bytes |
-| Scalar | 32 bytes |
-| Proof (π_A + π_B + π_C) | 192 bytes |
-| Public Inputs (3 × 32) | 96 bytes |
+This equation can only be satisfied if the prover knew a valid SPHINCS+ signature—the zero-knowledge property means we verify this without seeing the actual signature.
 
 ---
 
@@ -484,86 +360,61 @@ Where:
 
 **Location:** `zk-circuits/`
 
-Circom circuits for generating ZK proofs of SPHINCS+ signature validity.
+The ZK circuits define what we're proving. Written in Circom, they specify the computation that the prover must execute correctly to generate a valid proof. In our case: "I know a SPHINCS+ signature that validates against this public key and transaction hash."
 
-#### Directory Structure
+#### Why ZK Proofs?
+
+SPHINCS+ signatures are ~17KB—too large for efficient on-chain verification. ZK proofs let us compress verification: instead of checking the full signature on-chain, we:
+
+1. Verify the signature off-chain (in the relayer)
+2. Generate a proof that we did the verification correctly
+3. Verify the small proof (192 bytes) on-chain
+
+The proof is constant-size regardless of the computation's complexity. Our circuit has ~47 million constraints, but the proof is still just 192 bytes.
+
+#### Circuit Architecture
 
 ```
 zk-circuits/
 ├── circuits/
 │   ├── sphincs_main.circom     # Main verification circuit
 │   ├── sphincs_fors.circom     # FORS tree verification
-│   ├── keccak.circom           # Keccak/SHAKE256 implementation
-│   ├── utils.circom            # Utility templates
-│   └── simple_test.circom      # Infrastructure test
+│   ├── keccak.circom           # SHAKE256 implementation
+│   └── utils.circom            # Helper functions
 ├── scripts/
-│   ├── compile.sh              # Circom compilation
+│   ├── compile.sh              # Compile circuits
 │   ├── setup.sh                # Trusted setup
-│   └── prove.js                # Proof generation
+│   └── prove.js                # Generate proofs
 └── build/                      # Compiled artifacts
 ```
 
-#### Main Circuit (`sphincs_main.circom`)
+#### What the Circuit Proves
 
-**Public Inputs (48 bytes):**
-- `messageHash[32]`: Transaction hash
-- `pkSeed[16]`: First half of SPHINCS+ public key
-- `pkRoot[16]`: Second half (hypertree root)
+The main circuit (`sphincs_main.circom`) proves knowledge of a valid SPHINCS+ signature. It has:
 
-**Private Inputs (~8KB):**
+**Public Inputs** (visible to verifier):
+- `messageHash[32]`: The transaction hash being signed
+- `pkSeed[16]`: First half of the SPHINCS+ public key
+- `pkRoot[16]`: Second half (the hypertree root)
+
+**Private Inputs** (hidden from verifier):
 - `sigR[16]`: Signature randomness
-- `forsSecrets[30][16]`: FORS secret values
+- `forsSecrets[30][16]`: FORS tree secrets
 - `forsAuthPaths[30][9][16]`: Authentication paths
-- `forsPkHint[16]`: Precomputed FORS public key
-- `htSigCommitment[32]`: Hypertree commitment
+- `htSigCommitment[32]`: Commitment to hypertree signature
 
-**Constraint Count:**
+The circuit verifies that the private inputs constitute a valid SPHINCS+ signature for the given public inputs. If the proof verifies, we know the prover had a valid signature—without ever seeing it.
+
+#### Constraint Count
 
 | Component | Constraints |
 |-----------|-------------|
-| ComputeDigest (SHAKE256) | ~155,000 |
-| ExtractForsIndices | ~300 |
-| ForsVerify (30 trees) | ~46,500,000 |
-| HypertreeCommitment | ~155,000 |
+| Message Digest (SHAKE256) | ~155,000 |
+| FORS Verification (30 trees) | ~46,500,000 |
+| Hypertree Commitment | ~155,000 |
 | **Total** | **~46,810,000** |
 
-#### Circuit Templates
-
-```circom
-// Main entry point
-template SphincsVerify() {
-    // Public inputs
-    signal input messageHash[32];
-    signal input pkSeed[16];
-    signal input pkRoot[16];
-
-    // Private inputs
-    signal input sigR[16];
-    signal input forsSecrets[30][16];
-    signal input forsAuthPaths[30][9][16];
-    signal input forsPkHint[16];
-    signal input htSigCommitment[32];
-
-    // Output
-    signal output valid;
-
-    // 1. Compute message digest
-    component digest = ComputeDigest();
-
-    // 2. Extract FORS indices
-    component indices = ExtractForsIndices();
-
-    // 3. Verify FORS signature
-    component fors = ForsVerify();
-
-    // 4. Verify hypertree commitment
-    component ht = HypertreeCommitment();
-
-    valid <== 1;
-}
-
-component main {public [messageHash, pkSeed, pkRoot]} = SphincsVerify();
-```
+The large constraint count comes from implementing SHAKE256 in a ZK circuit—each hash requires thousands of constraints. Fortunately, this only affects proof generation time, not verification.
 
 ---
 
@@ -571,35 +422,20 @@ component main {public [messageHash, pkSeed, pkRoot]} = SphincsVerify();
 
 **Location:** `demo-site/`
 
-Next.js application for testing the wallet and building trading agents.
+The demo site is a Next.js application that showcases wallet functionality and provides a visual agent builder for automated trading strategies.
 
 #### Tech Stack
 
-- **Framework:** Next.js 14
-- **UI:** React 18, Tailwind CSS, Radix UI
-- **Flow Editor:** ReactFlow
-- **Charts:** Lightweight Charts
-- **AI:** OpenAI API integration
+- **Framework:** Next.js 14 with App Router
+- **UI:** React 18, Tailwind CSS, Radix UI components
+- **Flow Editor:** ReactFlow for visual programming
+- **Charts:** Lightweight Charts for market data
 
-#### Pages
+#### Key Features
 
-| Route | Purpose |
-|-------|---------|
-| `/` | Home page with X402 test |
-| `/agent-builder` | Visual agent creation |
-| `/x402-test` | X402 micropayment testing |
+**X402 Micropayments**: Integration with the X402 payment protocol, allowing websites to charge small amounts for API access or content.
 
-#### Agent Builder Components
-
-```
-components/agent-builder/
-├── FlowCanvas.tsx        # ReactFlow canvas
-├── BlockPalette.tsx      # Drag-and-drop blocks
-├── AgentBlockNode.tsx    # Custom node renderer
-├── ChatSidebar.tsx       # AI chat assistant
-├── AgentToolbar.tsx      # Save/load/run controls
-└── AgentManager.tsx      # Agent lifecycle
-```
+**Agent Builder**: A visual programming interface where users can create automated trading agents by connecting blocks. Blocks include price monitors, swap executors, and condition evaluators.
 
 ---
 
@@ -607,506 +443,308 @@ components/agent-builder/
 
 ### 4.1 SPHINCS+ (NIST FIPS 205)
 
-**Structure:**
+SPHINCS+ is a hash-based signature scheme standardized by NIST in their post-quantum cryptography competition. Unlike lattice-based alternatives (like Dilithium), SPHINCS+ relies only on the security of hash functions—a conservative choice that's well-understood.
+
+#### How It Works
+
+SPHINCS+ uses a "hypertree" structure—a tree of trees. At the leaves are one-time signatures (WOTS+), organized into FORS trees, which feed into a main Merkle tree. The signature includes:
+
+1. **Randomness (R)**: 16 bytes of randomness for message hashing
+2. **FORS Signature**: Reveals secrets from 30 different trees based on the message digest
+3. **Hypertree Signature**: A chain of WOTS+ signatures and authentication paths through 20 layers
 
 ```
-SPHINCS+ Signature (~17KB)
-├── R (16 bytes)           # Randomness
-├── FORS Signature         # Few-time signature
-│   └── 30 trees × (secret + 9 auth nodes) × 16 bytes = 4,800 bytes
-└── Hypertree Signature    # One-time signatures
-    └── 20 layers × (WOTS+ + auth path) = ~12,000 bytes
+SPHINCS+ Signature Structure (~17KB):
+├── R (16 bytes)              # Randomness
+├── FORS Signature (4,800 bytes)
+│   └── 30 trees × (secret + 9 auth nodes) × 16 bytes
+└── Hypertree Signature (~12,000 bytes)
+    └── 20 layers × (WOTS+ signature + authentication path)
 ```
 
-**Security:** 128-bit post-quantum security (NIST Level 1)
+#### Security Level
 
-### 4.2 SHAKE256 (FIPS 202)
+Our configuration provides 128-bit post-quantum security (NIST Level 1). This means:
+- Classical computers: Would need 2^128 operations to forge a signature
+- Quantum computers: Would need 2^64 operations (Grover's algorithm halves the security level for symmetric primitives)
 
-**Parameters:**
-- **Rate:** 136 bytes (1088 bits)
-- **Capacity:** 64 bytes (512 bits)
-- **Permutation:** Keccak-f[1600], 24 rounds
+Both are computationally infeasible for the foreseeable future.
 
-**Usage in SPHINCS+:**
-- F(): PRF for leaf computation
-- H(): Tree node hashing
-- T_l(): Public key compression
-- H_msg(): Message digest
+### 4.2 SHAKE256
+
+SHAKE256 is an "extendable-output function" (XOF) based on the Keccak permutation (the same primitive underlying SHA-3). Unlike fixed-output hash functions, SHAKE256 can produce any length of output.
+
+SPHINCS+ uses SHAKE256 extensively:
+- **F()**: Compute tree leaves from secrets
+- **H()**: Combine tree nodes
+- **T_l()**: Compress public keys
+- **H_msg()**: Hash messages into tree indices
+
+We implement SHAKE256 both in TypeScript (for the extension), Rust (for the contract), and Circom (for ZK proofs).
 
 ### 4.3 Groth16 ZK-SNARKs
 
-**Curve:** BLS12-381
+Groth16 is a zero-knowledge proof system with the smallest proof size among practical SNARKs. A proof is always exactly 192 bytes, regardless of what's being proven.
 
-**Verification Equation:**
+#### The Verification Equation
+
 ```
-e(π_A, π_B) · e(α, -β) · e(L, -γ) · e(π_C, -δ) = 1
+e(π_A, π_B) = e(α, β) · e(L, γ) · e(π_C, δ)
 ```
 
-**Proof Size:** 192 bytes (constant, regardless of circuit size)
+This equation uses "bilinear pairings" on the BLS12-381 elliptic curve. The pairing function `e` has a special property: `e(aG, bH) = e(G, H)^(ab)`. This enables checking complex relationships between curve points.
 
-**Public Inputs:** 3 × 32 bytes = 96 bytes
+#### Trusted Setup
+
+Groth16 requires a "trusted setup" ceremony to generate the proving and verification keys. The setup produces toxic waste that, if known, would allow forging proofs. Our system uses keys from the Hermez ceremony, which had over 100 participants—only one needed to be honest for the system to be secure.
 
 ---
 
 ## 5. Transaction Flows
 
-### 5.1 Account Locking (One-Time Setup)
+### 5.1 Account Setup (One-Time)
 
-```
-1. User creates wallet
-   ├── Generate Stellar Ed25519 keypair
-   └── Generate SPHINCS+ keypair
+Before using quantum-safe transactions, users must set up their account. This is a one-time process:
 
-2. Fund account via Friendbot (testnet)
+**Step 1: Create Wallet**
+The extension generates two keypairs: a standard Stellar Ed25519 pair (for initial account creation) and a SPHINCS+ pair (for quantum-safe signing).
 
-3. Lock account
-   ├── Register SPHINCS+ public key with contract
-   ├── Set masterWeight = 0 (disable Ed25519)
-   ├── Add contract as sha256Hash signer (weight = 1)
-   └── Set thresholds to 1
+**Step 2: Fund Account**
+On testnet, users can get free XLM from Friendbot. On mainnet, they'd need to acquire XLM through an exchange.
 
-4. Account now requires contract authorization
-```
+**Step 3: Register with Contract**
+The user's SPHINCS+ public key is registered with our smart contract. This creates an on-chain record linking their Stellar address to their quantum-safe identity.
 
-### 5.2 Quantum-Safe Payment (Simplified)
+**Step 4: Lock Account**
+This is the critical step. The extension submits a transaction that:
+- Sets `masterWeight = 0` (the Ed25519 key can no longer sign)
+- Adds the contract as a signer with weight 1
+- Sets all thresholds to 1
 
-```
-1. User initiates payment in extension
+After this transaction, the account is "locked"—only the contract can authorize transactions, and the contract only authorizes transactions with valid SPHINCS+ proofs.
 
-2. Extension builds transaction
-   ├── Creates payment operation
-   ├── Sets memo to SPHINCS+ public key hash
-   └── Returns transaction XDR + hash
+### 5.2 Sending a Payment
 
-3. User signs with SPHINCS+
-   └── sign(txHash, sphincsSecretKey) → ~17KB signature
+Once locked, here's how a payment works:
 
-4. Extension sends to relayer
-   POST /api/verify-and-submit {
-     stellarAddress, txHash, txXdr, sphincsSignature
-   }
+**Step 1: Build Transaction**
+User enters recipient and amount. The extension builds a standard Stellar payment transaction but includes the SPHINCS+ public key hash in the memo field.
 
-5. Relayer processes
-   ├── Verifies SPHINCS+ signature (simplified FORS check)
-   ├── Rebuilds transaction with current sequence
-   ├── Adds contract authorization (sha256Hash preimage)
-   └── Submits to Stellar network
+**Step 2: Sign with SPHINCS+**
+The extension signs the transaction hash with the user's SPHINCS+ private key, producing a ~17KB signature. This happens locally—the private key never leaves the browser.
 
-6. Transaction executes
-   └── Contract's authorization satisfies signer requirement
-```
+**Step 3: Send to Relayer**
+The extension sends the transaction XDR and signature to the relayer. The relayer verifies the signature is valid.
 
-### 5.3 Quantum-Safe Payment (Full ZK)
+**Step 4: Generate ZK Proof (Optional)**
+For maximum security, the relayer generates a ZK proof. This takes 30-120 seconds but creates cryptographic certainty.
 
-```
-1-3. Same as simplified flow
+**Step 5: Contract Authorization**
+The relayer submits the proof to the smart contract. The contract verifies it and records an approval for this specific transaction.
 
-4. Extension requests ZK proof
-   POST /api/zk/generate-proof {
-     stellarAddress, txHash, sphincsPublicKey, sphincsSignature
-   }
+**Step 6: Submit Transaction**
+The relayer submits the actual payment transaction to Stellar. Since the contract has approved it, Stellar accepts the transaction.
 
-5. Relayer generates proof (30-120 seconds)
-   ├── Parse SPHINCS+ signature structure
-   ├── Prepare circuit inputs
-   ├── Generate Groth16 proof via snarkjs
-   └── Return 192-byte proof + 96-byte public inputs
-
-6. Submit with ZK verification
-   POST /api/zk/submit {
-     stellarAddress, txHash, txXdr, proofHex, publicInputsHex
-   }
-
-7. Contract verifies ZK proof
-   ├── Load verification key
-   ├── Parse proof and public inputs
-   ├── Verify: e(π_A, π_B) = e(α, β) · e(L, γ) · e(π_C, δ)
-   ├── Store approval with nonce
-   └── Emit 'zk_auth' event
-
-8. Relayer submits payment
-   └── Uses contract authorization from ZK approval
-```
+**Step 7: Confirmation**
+The extension polls for confirmation and shows the user the result, including a link to view the transaction on Stellar Expert.
 
 ---
 
 ## 6. Security Model
 
-### 6.1 Threat Model
+### 6.1 What We Protect Against
 
-| Threat | Mitigation |
-|--------|------------|
-| Quantum attack on Ed25519 | Ed25519 disabled (masterWeight=0) |
-| Relayer compromise | Relayer cannot forge SPHINCS+ signatures |
-| Contract key theft | Contract has no private key |
-| Replay attacks | Nonce + TTL (5 minutes) + consumed flag |
-| Signature forgery | SPHINCS+ (128-bit post-quantum security) |
+| Threat | How We Mitigate |
+|--------|-----------------|
+| **Quantum attacks on Ed25519** | Ed25519 is disabled (masterWeight=0). Even if broken, it can't sign. |
+| **Relayer compromise** | Relayer can't forge SPHINCS+ signatures. It can only verify and relay. |
+| **Contract vulnerability** | Contract has no private key. Even if exploited, there's nothing to steal. |
+| **Replay attacks** | Each approval has a unique nonce and 5-minute expiration. |
+| **Signature forgery** | SPHINCS+ provides 128-bit post-quantum security. |
 
-### 6.2 Security Properties
+### 6.2 Trust Assumptions
 
-**Post-Quantum Safety:**
-- ✅ User Ed25519 disabled
-- ✅ SPHINCS+ signatures quantum-resistant
-- ✅ ZK proofs information-theoretically secure
-- ✅ Contract has no stealable private key
+Our security relies on several assumptions:
 
-**Authorization Flow:**
-```
-┌─────────────────┐
-│   User Signs    │ → SPHINCS+ (quantum-safe)
-└────────┬────────┘
-         ▼
-┌─────────────────┐
-│  ZK Proof Gen   │ → Groth16 (hides signature)
-└────────┬────────┘
-         ▼
-┌─────────────────┐
-│ Contract Verify │ → BLS12-381 pairing
-└────────┬────────┘
-         ▼
-┌─────────────────┐
-│   Transaction   │ → Contract authorization
-└─────────────────┘
-```
+1. **Hash Function Security**: SHAKE256 (Keccak) remains secure against quantum computers. This is widely believed—hash functions are only weakened (not broken) by Grover's algorithm.
 
-### 6.3 Trust Assumptions
+2. **Trusted Setup Integrity**: At least one participant in the Hermez ceremony destroyed their toxic waste. Given 100+ participants, this is highly likely.
 
-1. **Trusted Setup Ceremony:** Groth16 requires trusted setup (Hermez ceremony used)
-2. **SPHINCS+ Parameters:** NIST-standardized, peer-reviewed
-3. **Soroban Security:** Relies on Stellar network security
-4. **Relayer Availability:** Relayer must be online (but cannot steal funds)
+3. **Soroban Platform Security**: The Stellar network and Soroban smart contract platform are secure. This is the same assumption all Stellar users make.
+
+4. **Implementation Correctness**: Our SPHINCS+ and Groth16 implementations are correct. We follow the specifications closely and include test vectors.
+
+### 6.3 What We Don't Protect Against
+
+- **User device compromise**: If malware steals your SPHINCS+ private key, game over.
+- **Social engineering**: If you're tricked into signing a malicious transaction, we can't help.
+- **Relayer unavailability**: If the relayer is down, you can't transact (but funds remain safe).
 
 ---
 
 ## 7. Data Structures
 
-### 7.1 Extension Storage
+### 7.1 Wallet Storage (Extension)
+
+The extension stores wallet data in Chrome's local storage:
 
 ```typescript
-// Main wallet store
-interface WalletStore {
-  accounts: WalletData[];
-  activeAccountId: string | null;
-}
-
-// Individual account
 interface WalletData {
-  id: string;
-  name: string;
-  stellarPublicKey: string;
-  stellarSecretKey: string;
-  sphincsPublicKey: string;    // Base64, 32 bytes
-  sphincsSecretKey: string;    // Base64, 64 bytes
-  isLocked: boolean;
-  createdAt: number;
-}
-
-// X402 spending policy
-interface ServicePolicy {
-  origin: string;
-  name: string;
-  permission: 'auto' | 'prompt' | 'deny';
-  maxPerTransaction: string;
-  maxPerDay: string;
-  spentToday: string;
-  lastResetDate: string;
+  id: string;                    // Unique identifier
+  name: string;                  // User-friendly name
+  stellarPublicKey: string;      // Stellar address (G...)
+  stellarSecretKey: string;      // Stellar secret (S...)
+  sphincsPublicKey: string;      // Base64-encoded, 32 bytes
+  sphincsSecretKey: string;      // Base64-encoded, 64 bytes
+  isLocked: boolean;             // True if quantum-safe mode active
+  createdAt: number;             // Unix timestamp
 }
 ```
 
 ### 7.2 Contract Storage
 
+The contract maintains several data structures:
+
 ```rust
-// User registration
-#[contracttype]
-pub struct Registration {
-    pub sphincs_pk: Bytes,        // 32 bytes
-    pub registered_at: u64,
+// Links Stellar addresses to SPHINCS+ public keys
+struct Registration {
+    sphincs_pk: Bytes,        // 32 bytes
+    registered_at: u64,       // Timestamp
 }
 
-// Pending approval
-#[contracttype]
-pub struct PendingApproval {
-    pub tx_hash: BytesN<32>,
-    pub tx_xdr: Bytes,
-    pub stellar_address: Address,
-    pub approved_at: u64,
-    pub expires_at: u64,          // approved_at + 300 seconds
-    pub consumed: bool,
+// Tracks approved transactions awaiting execution
+struct PendingApproval {
+    tx_hash: BytesN<32>,      // Transaction hash
+    tx_xdr: Bytes,            // Serialized transaction
+    stellar_address: Address,  // Who approved it
+    approved_at: u64,         // When approved
+    expires_at: u64,          // Approval expiration (5 min)
+    consumed: bool,           // Already used?
 }
 
-// ZK verification key
-#[contracttype]
-pub struct VerificationKey {
-    pub alpha_g1: BytesN<48>,
-    pub beta_g2: BytesN<96>,
-    pub gamma_g2: BytesN<96>,
-    pub delta_g2: BytesN<96>,
-    pub ic: Vec<BytesN<48>>,      // num_public_inputs + 1
+// Groth16 verification key (set during ZK initialization)
+struct VerificationKey {
+    alpha_g1: BytesN<48>,     // α point in G1
+    beta_g2: BytesN<96>,      // β point in G2
+    gamma_g2: BytesN<96>,     // γ point in G2
+    delta_g2: BytesN<96>,     // δ point in G2
+    ic: Vec<BytesN<48>>,      // Input commitment points
 }
-```
-
-### 7.3 Groth16 Proof
-
-```typescript
-interface Groth16Proof {
-  pi_a: [string, string, string];           // G1 point
-  pi_b: [[string, string], [string, string], [string, string]];  // G2 point
-  pi_c: [string, string, string];           // G1 point
-  protocol: "groth16";
-  curve: "bls12381";
-}
-
-// Serialized format for contract
-// Total: 192 bytes
-// π_A: 48 bytes (compressed G1)
-// π_B: 96 bytes (compressed G2)
-// π_C: 48 bytes (compressed G1)
 ```
 
 ---
 
 ## 8. API Reference
 
-### 8.1 Extension Message API
+### 8.1 Extension Messages
 
-**Create Wallet:**
+The extension uses Chrome's message passing. Key messages:
+
+**Create Wallet**
 ```typescript
-chrome.runtime.sendMessage({
-  type: 'CREATE_WALLET'
-}, (response) => {
-  // response: { success, wallet: WalletData }
-});
+chrome.runtime.sendMessage({ type: 'CREATE_WALLET' })
+// Response: { success: true, wallet: WalletData }
 ```
 
-**Send XLM:**
+**Send Payment**
 ```typescript
 chrome.runtime.sendMessage({
   type: 'SEND_XLM',
-  payload: {
-    to: 'GDEST...',
-    amount: '10'
-  }
-}, (response) => {
-  // response: { success, txHash, stellarExpertUrl }
-});
+  payload: { to: 'GDEST...', amount: '10' }
+})
+// Response: { success: true, txHash: '...', stellarExpertUrl: '...' }
 ```
 
-**Lock Wallet:**
+**Lock Wallet**
 ```typescript
-chrome.runtime.sendMessage({
-  type: 'LOCK_WALLET'
-}, (response) => {
-  // response: { success }
-  // After this, account requires quantum-safe signing
-});
+chrome.runtime.sendMessage({ type: 'LOCK_WALLET' })
+// Response: { success: true }
+// After this, account is quantum-safe
 ```
 
-### 8.2 Relayer API
+### 8.2 Relayer Endpoints
 
-**Health Check:**
-```bash
+**Health Check**
+```
 GET /api/health
-
-Response:
-{
-  "status": "ok",
-  "relayerPublicKey": "GA2UZM...",
-  "contractId": "CAQNMNI...",
-  "network": "testnet",
-  "zkEnabled": true
-}
+→ { status: 'ok', relayerPublicKey: '...', zkEnabled: true }
 ```
 
-**Verify and Submit:**
-```bash
+**Verify and Submit**
+```
 POST /api/verify-and-submit
-Content-Type: application/json
-
-{
-  "stellarAddress": "GUSER...",
-  "txHash": "abc123...",
-  "txXdr": "AAAA...",
-  "sphincsSignature": "base64..."
-}
-
-Response:
-{
-  "success": true,
-  "paymentTxHash": "def456...",
-  "message": "Transaction submitted successfully"
-}
+Body: { stellarAddress, txHash, txXdr, sphincsSignature }
+→ { success: true, paymentTxHash: '...' }
 ```
 
-**Generate ZK Proof:**
-```bash
+**Generate ZK Proof**
+```
 POST /api/zk/generate-proof
-Content-Type: application/json
-
-{
-  "stellarAddress": "GUSER...",
-  "txHash": "abc123...",
-  "sphincsPublicKey": "hex32bytes...",
-  "sphincsSignature": "base64..."
-}
-
-Response:
-{
-  "success": true,
-  "proof": { "pi_a": [...], "pi_b": [...], "pi_c": [...] },
-  "publicSignals": ["...", "...", "..."],
-  "proofHex": "192byteshex...",
-  "publicInputsHex": "96byteshex...",
-  "provingTimeSeconds": 45.2
-}
-```
-
-### 8.3 Contract API (Soroban)
-
-**Register:**
-```rust
-stellar contract invoke \
-  --id CAQNMNI... \
-  --source SUSER... \
-  -- register \
-  --stellar_address GUSER... \
-  --sphincs_public_key 0x...
-```
-
-**Verify ZK and Authorize:**
-```rust
-stellar contract invoke \
-  --id CAQNMNI... \
-  --source SRELAYER... \
-  -- verify_zk_and_authorize \
-  --stellar_address GUSER... \
-  --tx_hash 0x... \
-  --tx_xdr 0x... \
-  --proof_bytes 0x... \
-  --public_inputs_bytes 0x...
+Body: { stellarAddress, txHash, sphincsPublicKey, sphincsSignature }
+→ { success: true, proofHex: '...', publicInputsHex: '...', provingTimeSeconds: 45.2 }
 ```
 
 ---
 
 ## 9. Deployment
 
-### 9.1 Contract Deployment
+### 9.1 Smart Contract
 
 ```bash
 cd soroban-verifier
-
-# Build
 cargo build --target wasm32-unknown-unknown --release
-
-# Deploy
-stellar contract deploy \
-  --wasm target/wasm32-unknown-unknown/release/quantum_verifier.wasm \
-  --source deployer \
-  --network testnet
-
-# Initialize ZK
-stellar contract invoke --id CAQNMNI... -- init_zk --admin GADMIN...
-
-# Set verification key
-stellar contract invoke --id CAQNMNI... -- set_zk_verification_key \
-  --alpha_g1 0x... --beta_g2 0x... --gamma_g2 0x... --delta_g2 0x... --ic [...]
+stellar contract deploy --wasm target/.../quantum_verifier.wasm --network testnet
 ```
 
-### 9.2 Relayer Deployment
+### 9.2 Relayer
 
 ```bash
 cd relayer
-
-# Install dependencies
 npm install
-
-# Set environment
 export RELAYER_SECRET=SXXX...
 export CONTRACT_ID=CAQNMNI...
-
-# Development
-npm run dev
-
-# Production (Vercel)
-vercel deploy
+npm run dev  # Development
+vercel deploy  # Production
 ```
 
-### 9.3 Extension Build
+### 9.3 Extension
 
 ```bash
 cd extension
-
-# Install dependencies
 npm install
-
-# Build
 npm run build
-
-# Load in Chrome
-# 1. Navigate to chrome://extensions
-# 2. Enable Developer Mode
-# 3. Load unpacked → select extension/dist
+# Load extension/dist as unpacked extension in Chrome
 ```
 
-### 9.4 ZK Circuit Setup
+### 9.4 ZK Circuits
 
 ```bash
 cd zk-circuits
-
-# Install dependencies
 npm install
-
-# Compile circuit
 ./scripts/compile.sh sphincs_main
-
-# Download Powers of Tau (one-time)
-wget https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_27.ptau
-
-# Trusted setup
-./scripts/setup.sh
-
-# Output files:
-# - build/sphincs_main_final.zkey (proving key)
-# - build/verification_key.json (for contract)
+./scripts/setup.sh  # Requires ~16GB RAM, takes 10-30 minutes
 ```
 
 ---
 
-## Appendix A: File Reference
+## Appendix: Performance Metrics
 
-| File | Lines | Purpose |
-|------|-------|---------|
-| `extension/src/sphincs.ts` | ~500 | SPHINCS+ implementation |
-| `extension/src/background.ts` | ~2,169 | Service worker |
-| `extension/src/stellar.ts` | ~400 | Stellar SDK integration |
-| `relayer/src/api.ts` | ~600 | Express API |
-| `relayer/src/zk-prover.ts` | ~400 | ZK proof generation |
-| `soroban-verifier/src/lib.rs` | 635 | Contract logic |
-| `soroban-verifier/src/groth16.rs` | 378 | ZK verifier |
-| `soroban-verifier/src/sphincs.rs` | 401 | SPHINCS+ verifier |
-| `zk-circuits/circuits/sphincs_main.circom` | 211 | Main circuit |
-| `zk-circuits/circuits/sphincs_fors.circom` | 323 | FORS verification |
-| `zk-circuits/circuits/keccak.circom` | 419 | Keccak implementation |
+| Operation | Duration | Output Size |
+|-----------|----------|-------------|
+| Key Generation | <100ms | 32B pk, 64B sk |
+| SPHINCS+ Signing | <500ms | ~17KB |
+| ZK Proof Generation | 30-120s | 192B |
+| On-chain ZK Verification | <1s | - |
+| Full Transaction | 35-130s | - |
 
 ---
 
-## Appendix B: Performance Metrics
+## Appendix: External Resources
 
-| Operation | Duration | Size |
-|-----------|----------|------|
-| SPHINCS+ Key Generation | <100ms | 32B pk, 64B sk |
-| SPHINCS+ Signing | <500ms | ~17KB signature |
-| ZK Proof Generation | 30-120s | 192B proof |
-| ZK Verification (on-chain) | <1s | - |
-| Transaction Submission | 5-10s | - |
-
----
-
-## Appendix C: External Links
-
-- **Contract (Testnet):** [stellar.expert/explorer/testnet/contract/CAQNMNI...](https://stellar.expert/explorer/testnet/contract/CAQNMNI57UZ44RV7K2T4INETCEES4W77XB3CT22Y2G6SH3SFFLPULDQW)
-- **SPHINCS+ Specification:** [NIST FIPS 205](https://csrc.nist.gov/pubs/fips/205/final)
-- **Groth16 Paper:** [On the Size of Pairing-based Non-interactive Arguments](https://eprint.iacr.org/2016/260)
-- **Hermez Trusted Setup:** [hermez.io/trusted-setup](https://hermez.io/trusted-setup)
+- [Contract on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CAQNMNI57UZ44RV7K2T4INETCEES4W77XB3CT22Y2G6SH3SFFLPULDQW)
+- [SPHINCS+ Specification (NIST FIPS 205)](https://csrc.nist.gov/pubs/fips/205/final)
+- [Groth16 Paper](https://eprint.iacr.org/2016/260)
+- [Hermez Trusted Setup](https://hermez.io/trusted-setup)
 
 ---
 
