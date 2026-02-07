@@ -4,7 +4,7 @@
 
 <img width="1076" height="501" alt="Technical Architecture Diagram" src="https://github.com/user-attachments/assets/7cabdb81-160e-4482-95ea-6b8275e9cfcc" />
 
-**[Watch Architecture Explanation Video]([https://drive.google.com/file/d/12WWr9Y_p7Txaw0j9P6F7OpJFjUFi0K_f/view?usp=drive_link](https://drive.google.com/file/d/1dlyoI6VWXutEAfDx8c70KoapQMH2m3lR/view?usp=sharing))**
+**[Watch Architecture Explanation Video]([https://drive.google.com/file/d/1dlyoI6VWXutEAfDx8c70KoapQMH2m3lR/view?usp=drive_link])**
 
 ---
 
