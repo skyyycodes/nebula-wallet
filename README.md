@@ -716,7 +716,3 @@ Contributions are welcome! Please:
 ## License
 
 MIT License - See [LICENSE](./LICENSE) for details.
-
----
-
-**Disclaimer:** This project was built for the Stellar Build-A-Thon Kolkata Edition. It is a hackathon demo for educational and demonstration purposes. Do not use with real funds on mainnet. The SPHINCS+ and ZK-SNARK implementations are simplified for demonstration and have not been audited for production use.
