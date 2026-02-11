@@ -49,7 +49,7 @@
 
 ## The Problem
 
-Stellar wallets today rely on **Ed25519** digital signatures. While secure against classical computers, Ed25519 is vulnerable to quantum computers running **Shor's algorithm**. Once large-scale quantum computers become practical (estimated within 10-15 years), an attacker could:
+Stellar wallets today rely on **Ed25519** digital signatures. While secure against classical computers, Ed25519 is vulnerable to quantum computers running **Shor's algorithm**. Once large-scale quantum computers become practical (estimated within 3-4 years), an attacker could:
 
 1. Derive private keys from public keys exposed on-chain
 2. Drain any wallet whose public key has been revealed through past transactions
