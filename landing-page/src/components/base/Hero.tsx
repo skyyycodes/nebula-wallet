@@ -1,13 +1,12 @@
 'use client';
-import { ForwardedRef, useEffect, useRef } from 'react';
+import { ForwardedRef, useEffect, useRef, useState } from 'react';
 import { motion, useAnimation, useInView, useScroll, useTransform } from 'framer-motion';
 import { Button } from '../ui/button';
 import City from './City';
 import ActionTickers from '../tickers/ActionTickers';
 import DashboardTextAreaComponent from './DashboardTextAreaComponent';
 import HighlighterTicker from '../tickers/HighlighterTicker';
-
-const DOWNLOAD_URL = '/downloads/nebula.zip';
+import InstallModal from '../utility/InstallModal';
 
 interface HeroProps {
     inputRef: ForwardedRef<HTMLTextAreaElement>;
@@ -17,6 +16,7 @@ export default function Hero({ inputRef }: HeroProps) {
     const heroRef = useRef<HTMLDivElement>(null);
     const isInView = useInView(heroRef, { once: true });
     const controls = useAnimation();
+    const [openInstallModal, setOpenInstallModal] = useState(false);
 
     useEffect(() => {
         if (isInView) {
@@ -70,14 +70,16 @@ export default function Hero({ inputRef }: HeroProps) {
                         <p className="m-0 p-0">Powered by Soroban, x402</p>
                         <p className="m-0 p-0">&amp; Post-Quantum Crypto</p>
                         <div className="flex items-end justify-center gap-x-2 md:gap-x-3 mt-2">
-                            <a href={DOWNLOAD_URL} download>
-                                <Button className="font-semibold text-xs md:text-base !px-4 md:!px-6 rounded-[4px]">
-                                    Download Chrome Extension
-                                </Button>
-                            </a>
+                            <Button
+                                onClick={() => setOpenInstallModal(true)}
+                                className="font-semibold text-xs md:text-base !px-4 md:!px-6 rounded-[4px] cursor-pointer"
+                            >
+                                Download Chrome Extension
+                            </Button>
                         </div>
                     </div>
                 </div>
+                <InstallModal open={openInstallModal} setOpen={setOpenInstallModal} />
             </main>
         </motion.div>
     );

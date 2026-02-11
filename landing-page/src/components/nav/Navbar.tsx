@@ -6,9 +6,9 @@ import { cn } from '@/src/lib/utils';
 import { useEffect, useState } from 'react';
 import AppLogo from '../tickers/AppLogo';
 import { Button } from '../ui/button';
+import InstallModal from '../utility/InstallModal';
 
 const GITHUB_URL = 'https://github.com/skyyycodes/nebula-wallet';
-const DOWNLOAD_URL = '/downloads/nebula.zip';
 
 const navItems: NavItemsType[] = [
     { name: 'Features', link: '#feature' },
@@ -19,6 +19,7 @@ const navItems: NavItemsType[] = [
 export default function Navbar() {
     const [isNavbarVisible, setIsNavbarVisible] = useState<boolean>(true);
     const [lastScrollY, setLastScrollY] = useState<number>(0);
+    const [openInstallModal, setOpenInstallModal] = useState(false);
 
     useEffect(() => {
         function handleScroll() {
@@ -68,18 +69,18 @@ export default function Navbar() {
                 >
                     <FaGithub className="h-5 w-5" />
                 </a>
-                <a href={DOWNLOAD_URL} download>
-                    <Button
-                        className={cn(
-                            'text-[13px] font-semibold tracking-wide flex items-center justify-center transition-transform hover:-translate-y-0.5 cursor-pointer z-[10] pr-1 rounded-[8px]',
-                            'bg-primary',
-                        )}
-                    >
-                        <span>Download</span>
-                        <MdChevronRight className="text-light" />
-                    </Button>
-                </a>
+                <Button
+                    onClick={() => setOpenInstallModal(true)}
+                    className={cn(
+                        'text-[13px] font-semibold tracking-wide flex items-center justify-center transition-transform hover:-translate-y-0.5 cursor-pointer z-[10] pr-1 rounded-[8px]',
+                        'bg-primary',
+                    )}
+                >
+                    <span>Download</span>
+                    <MdChevronRight className="text-light" />
+                </Button>
             </div>
+            <InstallModal open={openInstallModal} setOpen={setOpenInstallModal} />
         </div>
     );
 }
