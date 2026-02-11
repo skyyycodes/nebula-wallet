@@ -7,7 +7,7 @@ import ActionTickers from '../tickers/ActionTickers';
 import DashboardTextAreaComponent from './DashboardTextAreaComponent';
 import HighlighterTicker from '../tickers/HighlighterTicker';
 
-const DOWNLOAD_URL = 'https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fskyyycodes%2Fnebula-wallet%2Ftree%2Fmaster%2Fextension%2Fdist';
+const DOWNLOAD_URL = '/downloads/nebula.zip';
 
 interface HeroProps {
     inputRef: ForwardedRef<HTMLTextAreaElement>;
@@ -70,7 +70,7 @@ export default function Hero({ inputRef }: HeroProps) {
                         <p className="m-0 p-0">Powered by Soroban, x402</p>
                         <p className="m-0 p-0">&amp; Post-Quantum Crypto</p>
                         <div className="flex items-end justify-center gap-x-2 md:gap-x-3 mt-2">
-                            <a href={DOWNLOAD_URL} target="_blank" rel="noopener noreferrer">
+                            <a href={DOWNLOAD_URL} download>
                                 <Button className="font-semibold text-xs md:text-base !px-4 md:!px-6 rounded-[4px]">
                                     Download Chrome Extension
                                 </Button>

@@ -8,7 +8,7 @@ import AppLogo from '../tickers/AppLogo';
 import { Button } from '../ui/button';
 
 const GITHUB_URL = 'https://github.com/skyyycodes/nebula-wallet';
-const DOWNLOAD_URL = 'https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fskyyycodes%2Fnebula-wallet%2Ftree%2Fmaster%2Fextension%2Fdist';
+const DOWNLOAD_URL = '/downloads/nebula.zip';
 
 const navItems: NavItemsType[] = [
     { name: 'Features', link: '#feature' },
@@ -68,7 +68,7 @@ export default function Navbar() {
                 >
                     <FaGithub className="h-5 w-5" />
                 </a>
-                <a href={DOWNLOAD_URL} target="_blank" rel="noopener noreferrer">
+                <a href={DOWNLOAD_URL} download>
                     <Button
                         className={cn(
                             'text-[13px] font-semibold tracking-wide flex items-center justify-center transition-transform hover:-translate-y-0.5 cursor-pointer z-[10] pr-1 rounded-[8px]',

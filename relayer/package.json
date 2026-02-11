@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "description": "Hybrid relayer service for quantum-safe Stellar wallet",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "scripts": {
     "build": "tsc",
     "vercel-build": "tsc",
-    "start": "node dist/index.js",
+    "start": "node dist/src/index.js",
     "dev": "ts-node --esm src/index.ts"
   },
   "dependencies": {

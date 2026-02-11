@@ -551,9 +551,6 @@ export function formatXLM(amount: string): string {
   return num.toFixed(7).replace(/\.?0+$/, '');
 }
 
-<<<<<<< HEAD
-export { VERIFIER_CONTRACT_ID, VERIFIER_PUBLIC_KEY };
-=======
 /**
  * Build a multi-send transaction (batch payments to multiple recipients)
  */
@@ -601,7 +598,7 @@ export async function buildMultiSendTransaction(
   // Process recipients sequentially to check account existence
   for (const recipient of recipients) {
     console.log(`[MultiSend] Processing recipient: ${recipient.address}, amount: ${recipient.amount}`);
-    
+
     let operation;
     try {
       // Check if account exists
@@ -745,5 +742,4 @@ export async function buildClaimBalanceTransaction(
   };
 }
 
-export { VERIFIER_PUBLIC_KEY };
->>>>>>> 34cce9f4880f29c7f8c9cf21ea66c5f987aee96d
+export { VERIFIER_CONTRACT_ID, VERIFIER_PUBLIC_KEY };

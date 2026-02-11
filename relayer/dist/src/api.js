@@ -664,13 +664,6 @@ app.post('/api/zk/submit', async (req, res) => {
             // The contract's address hash was added as signer during wallet lock
             // Providing the preimage (contract address bytes) serves as authorization
             //
-            // Note: For full implementation, we need to add the preimage as a
-            // "hint" to the transaction. This requires extending the Stellar SDK
-            // or using a custom signature format.
-            //
-            // For now, the relayer still signs but ONLY for gas sponsorship.
-            // The contract's ZK verification provides the actual authorization.
-            // Future: Implement preAuthTx or custom signature with preimage.
             console.log('Note: Using relayer for gas sponsorship (ZK proof provides authorization)');
             newTx.sign(relayerKeypair);
             const paymentResult = await server.submitTransaction(newTx);
