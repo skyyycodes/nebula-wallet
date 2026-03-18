@@ -13,7 +13,7 @@
   <a href="https://stellar.expert/explorer/testnet/contract/CAQNMNI57UZ44RV7K2T4INETCEES4W77XB3CT22Y2G6SH3SFFLPULDQW">View Contract on Stellar.expert</a> &middot;
   <a href="https://youtu.be/ocsZVjusF24">Demo Video</a> &middot;
   <a href="https://drive.google.com/file/d/1dlyoI6VWXutEAfDx8c70KoapQMH2m3lR/view?usp=drive_link">Architecture Video</a> &middot;
-  <a href="./ARCHITECTURE.md">Detailed Architecture</a>
+  <a href="./ARCHITECTURE.md">Detailed  Architecture</a>
 </p>
 
 ---
