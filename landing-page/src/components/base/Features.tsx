@@ -16,40 +16,30 @@ const NebulaLogo = ({ className, style }: { className?: string; style?: React.CS
     />
 );
 
-const X402Logo = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-        src="/x402.png"
-        alt="x402"
-        className={cn('size-5 sm:size-[1.875rem] md:size-12', className)}
-        style={style}
-    />
-);
-
 const featureData = [
     {
         topTitle: 'AGENT-POWERED',
-        centerTitle: 'Smart x402 Payments',
+        centerTitle: 'Smart Stellar Flows',
         bottomTitle: 'Agents & Bots',
-        description: 'Let humans and AI agents trigger Stellar x402 payments safely from Nebula.',
-        icon: X402Logo,
+        description: 'Let humans and AI agents trigger secure Stellar actions with policy controls.',
+        icon: NebulaLogo,
         color: '#CE422B',
         gradient: 'from-red-500/20 to-orange-500/20',
     },
     {
         topTitle: 'INSTANT',
-        centerTitle: 'One-Click Paywalls',
-        bottomTitle: 'x402-Native',
-        description: 'Handle HTTP 402 challenges in a tap and settle over Stellar in seconds.',
+        centerTitle: 'One-Click Transfers',
+        bottomTitle: 'Fast Finality',
+        description: 'Confirm Stellar transfers in seconds with a clean, guided transaction flow.',
         icon: FaBolt,
         color: '#FFC400',
         gradient: 'from-yellow-500/20 to-amber-500/20',
     },
     {
         topTitle: 'COMPLETE',
-        centerTitle: 'Quantum-Safe Receipts',
+        centerTitle: 'XMSS Signatures',
         bottomTitle: 'Post-Quantum',
-        description: 'Dual-sign transactions and store quantum-proof payment receipts on Soroban.',
+        description: 'Sign with XMSS and verify through ZK proofs for practical quantum-safe security.',
         icon: NebulaLogo,
         color: '#6C44FC',
         gradient: 'from-purple-500/20 to-violet-500/20',
@@ -115,9 +105,9 @@ export default function Features() {
                     <div className="mt-4 w-full flex justify-center text-[7px] sm:text-sm md:text-2xl tracking-widest text-darkest font-semibold text-center px-4">
                         Give your Stellar wallet quantum‑safe,&nbsp;
                         <Highlighter action="underline" color="#6C44FC">
-                            x402‑ready
+                            XMSS‑backed
                         </Highlighter>
-                        &nbsp;payments in one seamless experience.
+                        &nbsp;security in one seamless experience.
                     </div>
                 </motion.div>
 

@@ -77,11 +77,12 @@ export default function DashboardTextAreaComponent({ inputRef }: DashboardTextAr
                     </div>
                     <div className="relative">
                         <pre className="w-full bg-transparent px-4 py-5 text-neutral-200 font-mono text-xs md:text-sm overflow-x-auto text-left whitespace-pre">
-<code className="block">{`// nebula: handle an x402 payment
-await nebula.pay402({
-  endpoint: "https://api.service.com",
-  maxSpend: "2 USDC",
-  quantumReceipt: true,
+<code className="block">{`// nebula: execute an XMSS-secured transfer
+await nebula.sendSecure({
+    to: "GABCD...WXYZ",
+    asset: "USDC",
+    amount: "2",
+    signatureScheme: "XMSS",
 });`}</code>
                         </pre>
                         {activeTemplate && (

@@ -8,15 +8,15 @@ import DonutComponent from '../ui/DonutComponent';
 const productMetaOptions = [
     {
         title: 'Nebula Core',
-        subtitle: 'x402-native Stellar wallet with built-in DEX',
+        subtitle: 'XMSS-ready Stellar wallet with built-in DEX',
         description:
-            'Nebula Core is your gateway to Stellar. Manage multiple accounts, send payments, and swap tokens through our DEX aggregator that finds the best rates across Stellar SDEX. Native x402 support means one-click payments for paywalls, APIs, and premium content — no more subscription fatigue.',
+            'Nebula Core is your gateway to Stellar. Manage multiple accounts, send payments, and swap tokens through our DEX aggregator that finds the best rates across Stellar SDEX. A streamlined signing flow and secure approvals make advanced on-chain actions feel simple for both users and automation.',
     },
     {
         title: 'Quantum Shield',
-        subtitle: 'SPHINCS+ signatures with ZK-SNARK verification',
+        subtitle: 'XMSS signatures with ZK-SNARK verification',
         description:
-            'Your Ed25519 key is permanently disabled (masterWeight=0). Instead, transactions are signed locally with SPHINCS+ — a NIST-approved post-quantum algorithm. A ZK proof verifies your signature on-chain without revealing it. No private key to steal, no quantum vulnerability to exploit.',
+            'Your Ed25519 key is permanently disabled (masterWeight=0). Instead, transactions are signed locally with XMSS for hash-based post-quantum protection. A ZK proof verifies your signature on-chain without revealing it. No private key to steal, no quantum vulnerability to exploit.',
     },
     {
         title: 'Agent Builder',

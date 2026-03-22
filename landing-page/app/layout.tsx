@@ -5,12 +5,12 @@ import { Toaster } from 'sonner';
 export const metadata: Metadata = {
     title: 'Nebula Wallet',
     description:
-        'Nebula is a quantum-safe Stellar wallet with x402 payments and post-quantum cryptography.',
+        'Nebula is a quantum-safe Stellar wallet powered by XMSS signatures and post-quantum security.',
     metadataBase: new URL('https://nebula.dev'),
     openGraph: {
         title: 'Nebula Wallet',
         description:
-            'Nebula is a quantum-safe Stellar wallet with x402 payments and post-quantum cryptography.',
+            'Nebula is a quantum-safe Stellar wallet powered by XMSS signatures and post-quantum security.',
         url: 'https://nebula.dev',
         siteName: 'Nebula Wallet',
         images: [
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
         card: 'summary_large_image',
         title: 'Nebula Wallet | Quantum-Safe Stellar Wallet',
         description:
-            'Nebula is a quantum-safe Stellar wallet with x402 payments and post-quantum cryptography.',
+            'Nebula is a quantum-safe Stellar wallet powered by XMSS signatures and post-quantum security.',
         images: ['/images/nebula-dashboard.png'],
     },
 };

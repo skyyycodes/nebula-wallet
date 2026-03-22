@@ -71,15 +71,15 @@ export default function Faq() {
     const faqs: FaqData[] = [
         {
             question: 'What is Nebula Wallet?',
-            answer: 'Nebula Wallet is a quantum-safe Chrome extension wallet for the Stellar blockchain. It combines post-quantum cryptography (SPHINCS+), zero-knowledge proofs, and x402 payment protocol to provide future-proof security against quantum computer attacks while enabling instant micropayments and AI agent automation.',
+            answer: 'Nebula Wallet is a quantum-safe Chrome extension wallet for the Stellar blockchain. It combines post-quantum cryptography (XMSS), zero-knowledge proofs, and secure agent automation to provide future-proof security against quantum computer attacks.',
         },
         {
             question: 'What makes Nebula "quantum-safe"?',
-            answer: 'Traditional wallets use Ed25519 signatures which are vulnerable to quantum computers running Shor\'s algorithm. Nebula disables your Ed25519 key entirely and instead uses SPHINCS+ (a NIST-approved post-quantum signature scheme) combined with ZK-SNARKs to authorize transactions through a smart contract. This means even if quantum computers break Ed25519, your funds remain secure.',
+            answer: 'Traditional wallets use Ed25519 signatures which are vulnerable to quantum computers running Shor\'s algorithm. Nebula disables your Ed25519 key entirely and instead uses XMSS (a hash-based post-quantum signature scheme) combined with ZK-SNARKs to authorize transactions through a smart contract. This means even if quantum computers break Ed25519, your funds remain secure.',
         },
         {
-            question: 'What is x402 and why does it matter?',
-            answer: 'x402 refers to HTTP 402 "Payment Required" - a web standard for micropayments. Nebula natively supports x402, enabling one-click paywalls, API metering, premium content access, and AI service payments. Instead of subscriptions, you pay only for what you use, with instant settlement on Stellar.',
+            question: 'Why did Nebula choose XMSS?',
+            answer: 'XMSS is a practical hash-based signature approach designed for post-quantum security. It avoids the assumptions used by classical public-key systems and gives Nebula a clear path for long-term key protection while keeping signing logic deterministic and verifiable.',
         },
         {
             question: 'How does the AI Agent Builder work?',
@@ -87,11 +87,11 @@ export default function Faq() {
         },
         {
             question: 'What blockchain does Nebula use?',
-            answer: 'Nebula is built on Stellar and Soroban (Stellar\'s smart contract platform). We chose Stellar for its fast finality (3-5 seconds), low fees, and built-in DEX. The quantum-safe verification happens through a Soroban smart contract that validates ZK proofs of your SPHINCS+ signatures.',
+            answer: 'Nebula is built on Stellar and Soroban (Stellar\'s smart contract platform). We chose Stellar for its fast finality (3-5 seconds), low fees, and built-in DEX. The quantum-safe verification happens through a Soroban smart contract that validates ZK proofs of your XMSS signatures.',
         },
         {
             question: 'Is my private key safe?',
-            answer: 'Yes, and here\'s why: Your original Ed25519 key is permanently disabled (masterWeight=0) so it cannot sign transactions. Your SPHINCS+ key signs locally, and a ZK proof is generated to verify the signature without revealing it. The relayer only pays gas fees and never has custody of your funds. There\'s no private key that can be stolen to drain your wallet.',
+            answer: 'Yes, and here\'s why: Your original Ed25519 key is permanently disabled (masterWeight=0) so it cannot sign transactions. Your XMSS key signs locally, and a ZK proof is generated to verify the signature without revealing it. The relayer only pays gas fees and never has custody of your funds. There\'s no private key that can be stolen to drain your wallet.',
         },
         {
             question: 'Can I swap tokens with Nebula?',
@@ -99,7 +99,7 @@ export default function Faq() {
         },
         {
             question: 'How do I get started?',
-            answer: 'Download the Chrome extension from our GitHub repository, create a new wallet or import an existing Stellar account, and you\'re ready to go. For quantum-safe mode, you\'ll need to register your SPHINCS+ public key with our verification contract. Check out the README for detailed setup instructions.',
+            answer: 'Download the Chrome extension from our GitHub repository, create a new wallet or import an existing Stellar account, and you\'re ready to go. For quantum-safe mode, you\'ll need to register your XMSS public key with our verification contract. Check out the README for detailed setup instructions.',
         },
     ];
 

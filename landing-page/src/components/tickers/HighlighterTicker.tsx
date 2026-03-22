@@ -15,7 +15,7 @@ export default function HighlighterTicker() {
             </Highlighter>{' '}
             across the{' '}
             <Highlighter action="underline" padding={0} color="#FFC412">
-                Stellar x402 economy
+                Stellar XMSS economy
             </Highlighter>
         </motion.p>
     );

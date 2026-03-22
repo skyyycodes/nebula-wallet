@@ -67,7 +67,7 @@ export default function Hero({ inputRef }: HeroProps) {
 
                 <div className="absolute bottom-2 left-0 md:bottom-12 md:left-10 text-[10px] md:text-[18px]">
                     <div className="md:max-w-2xl max-w-sm flex flex-col justify-start items-start text-light font-semibold">
-                        <p className="m-0 p-0">Powered by Soroban, x402</p>
+                        <p className="m-0 p-0">Powered by Soroban + XMSS</p>
                         <p className="m-0 p-0">&amp; Post-Quantum Crypto</p>
                         <div className="flex items-end justify-center gap-x-2 md:gap-x-3 mt-2">
                             <Button

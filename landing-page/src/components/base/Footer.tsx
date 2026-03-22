@@ -18,7 +18,7 @@ export default function Footer() {
                     />
                 </div>
                 <p className="text-neutral-500 md:text-sm text-xs tracking-wider mt-4 text-center px-4">
-                    © 2025 Nebula. Powered by x402 + Stellar.
+                    © 2025 Nebula. Powered by XMSS + Stellar.
                 </p>
             </div>
         </motion.div>
