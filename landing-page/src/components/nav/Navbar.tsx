@@ -8,7 +8,7 @@ import AppLogo from '../tickers/AppLogo';
 import { Button } from '../ui/button';
 import InstallModal from '../utility/InstallModal';
 
-const GITHUB_URL = 'https://github.com/skyyycodes/nebula-wallet';
+const GITHUB_URL = 'https://github.com/Eshan276/nebulav2';
 
 const navItems: NavItemsType[] = [
     { name: 'Features', link: '#feature' },

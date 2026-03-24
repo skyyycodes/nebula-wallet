@@ -7,7 +7,7 @@ import { motion, useInView } from 'framer-motion';
 import { Button } from '../ui/button';
 import { FaGithub } from 'react-icons/fa';
 
-const GITHUB_URL = 'https://github.com/skyyycodes/nebula-wallet';
+const GITHUB_URL = 'https://github.com/Eshan276/nebulav2';
 
 /* eslint-disable react/prop-types */
 interface FaqData {
