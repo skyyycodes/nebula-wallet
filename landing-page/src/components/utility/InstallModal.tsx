@@ -7,7 +7,7 @@ import OpacityBackground from './OpacityBackground';
 import { Button } from '../ui/button';
 import { cn } from '@/src/lib/utils';
 
-const DOWNLOAD_URL = '/downloads/nebula.zip';
+const DOWNLOAD_URL = 'https://drive.google.com/file/d/1fhWnvHnMaJy8UQa5iNWRLCPIi64uhrDG/view?usp=drive_link';
 
 interface InstallModalProps {
     open: boolean;
@@ -99,7 +99,7 @@ export default function InstallModal({ open, setOpen }: InstallModalProps) {
                     >
                         <span className="text-[#d4d8de]">Close</span>
                     </Button>
-                    <a href={DOWNLOAD_URL} download className="flex-1">
+                    <a href={DOWNLOAD_URL} target="_blank" rel="noopener noreferrer" className="flex-1">
                         <Button
                             className={cn(
                                 'w-full px-6 py-5 text-sm font-medium',
