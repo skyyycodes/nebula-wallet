@@ -75,7 +75,7 @@ export default function Faq() {
         },
         {
             question: 'What makes Nebula "quantum-safe"?',
-            answer: 'Traditional wallets use Ed25519 signatures which are vulnerable to quantum computers running Shor\'s algorithm. Nebula disables your Ed25519 key entirely and instead uses XMSS (a hash-based post-quantum signature scheme) combined with ZK-SNARKs to authorize transactions through a smart contract. This means even if quantum computers break Ed25519, your funds remain secure.',
+            answer: "Traditional wallets use Ed25519 signatures which are vulnerable to quantum computers running Shor's algorithm. Nebula disables your Ed25519 key entirely and instead uses XMSS (a hash-based post-quantum signature scheme) combined with ZK-SNARKs to authorize transactions through a smart contract. This means even if quantum computers break Ed25519, your funds remain secure.",
         },
         {
             question: 'Why did Nebula choose XMSS?',
@@ -87,19 +87,19 @@ export default function Faq() {
         },
         {
             question: 'What blockchain does Nebula use?',
-            answer: 'Nebula is built on Stellar and Soroban (Stellar\'s smart contract platform). We chose Stellar for its fast finality (3-5 seconds), low fees, and built-in DEX. The quantum-safe verification happens through a Soroban smart contract that validates ZK proofs of your XMSS signatures.',
+            answer: "Nebula is built on Stellar and Soroban (Stellar's smart contract platform). We chose Stellar for its fast finality (3-5 seconds), low fees, and built-in DEX. The quantum-safe verification happens through a Soroban smart contract that validates ZK proofs of your XMSS signatures.",
         },
         {
             question: 'Is my private key safe?',
-            answer: 'Yes, and here\'s why: Your original Ed25519 key is permanently disabled (masterWeight=0) so it cannot sign transactions. Your XMSS key signs locally, and a ZK proof is generated to verify the signature without revealing it. The relayer only pays gas fees and never has custody of your funds. There\'s no private key that can be stolen to drain your wallet.',
+            answer: "Yes, and here's why: Your original Ed25519 key is permanently disabled (masterWeight=0) so it cannot sign transactions. Your XMSS key signs locally, and a ZK proof is generated to verify the signature without revealing it. The relayer only pays gas fees and never has custody of your funds. There's no private key that can be stolen to drain your wallet.",
         },
         {
             question: 'Can I swap tokens with Nebula?',
-            answer: 'Yes! Nebula includes a built-in DEX aggregator that fetches quotes from multiple sources including Stellar\'s native SDEX orderbook. It finds the best route, calculates price impact, handles slippage, and automatically creates trustlines for new assets. You can swap any Stellar token with just a few clicks.',
+            answer: "Yes! Nebula includes a built-in DEX aggregator that fetches quotes from multiple sources including Stellar's native SDEX orderbook. It finds the best route, calculates price impact, handles slippage, and automatically creates trustlines for new assets. You can swap any Stellar token with just a few clicks.",
         },
         {
             question: 'How do I get started?',
-            answer: 'Download the Chrome extension from our GitHub repository, create a new wallet or import an existing Stellar account, and you\'re ready to go. For quantum-safe mode, you\'ll need to register your XMSS public key with our verification contract. Check out the README for detailed setup instructions.',
+            answer: "Download the Chrome extension from our GitHub repository, create a new wallet or import an existing Stellar account, and you're ready to go. For quantum-safe mode, you'll need to register your XMSS public key with our verification contract. Check out the README for detailed setup instructions.",
         },
     ];
 
