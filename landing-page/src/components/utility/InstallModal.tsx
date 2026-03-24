@@ -7,7 +7,8 @@ import OpacityBackground from './OpacityBackground';
 import { Button } from '../ui/button';
 import { cn } from '@/src/lib/utils';
 
-const DOWNLOAD_URL = 'https://drive.google.com/file/d/1fhWnvHnMaJy8UQa5iNWRLCPIi64uhrDG/view?usp=drive_link';
+const DOWNLOAD_URL =
+    'https://drive.google.com/file/d/1fhWnvHnMaJy8UQa5iNWRLCPIi64uhrDG/view?usp=drive_link';
 
 interface InstallModalProps {
     open: boolean;
@@ -29,8 +30,7 @@ const steps = [
     {
         icon: <GoPackage className="text-[#38bdf8] text-lg" />,
         title: 'Load Unpacked',
-        description:
-            'Click "Load unpacked" and select the dist folder from the extracted files.',
+        description: 'Click "Load unpacked" and select the dist folder from the extracted files.',
     },
 ];
 
@@ -38,7 +38,10 @@ export default function InstallModal({ open, setOpen }: InstallModalProps) {
     if (!open) return null;
 
     return (
-        <OpacityBackground className="bg-darkest/70 z-[200]" onBackgroundClick={() => setOpen(false)}>
+        <OpacityBackground
+            className="bg-darkest/70 z-[200]"
+            onBackgroundClick={() => setOpen(false)}
+        >
             <div
                 onClick={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}
@@ -99,7 +102,12 @@ export default function InstallModal({ open, setOpen }: InstallModalProps) {
                     >
                         <span className="text-[#d4d8de]">Close</span>
                     </Button>
-                    <a href={DOWNLOAD_URL} target="_blank" rel="noopener noreferrer" className="flex-1">
+                    <a
+                        href={DOWNLOAD_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1"
+                    >
                         <Button
                             className={cn(
                                 'w-full px-6 py-5 text-sm font-medium',
