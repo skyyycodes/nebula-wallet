@@ -22,7 +22,7 @@
 
 - [The Problem](#the-problem)
 - [Our Solution](#our-solution)
-- [Architecture Overview](#architecture-overview)
+- [Architecture  Overview](#architecture-overview)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [Features](#features)
